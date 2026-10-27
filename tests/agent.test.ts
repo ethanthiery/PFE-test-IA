@@ -5,6 +5,7 @@ import {
   restrictedArgs,
   runCli,
 } from '../connectors/agents/codex.js';
+import { ClaudeAdapter, claudeArgs } from '../connectors/agents/claude.js';
 import { unvalidatedAdapter } from '../connectors/agents/unvalidated.js';
 test('CLI réellement absent : erreur exploitable et mode manuel disponible', async () => {
   const adapter = new CodexAdapter('ds-studio-definitely-missing-cli');
@@ -57,12 +58,33 @@ test('timeout du processus enfant exécuté', async () => {
     /Délai CLI/,
   );
 });
-test('Claude et Gemini indisponibles explicitement', async () => {
-  for (const id of ['claude', 'gemini'] as const) {
-    const a = unvalidatedAdapter(id);
-    assert.equal((await a.status()).available, false);
-    await assert.rejects(() => a.reply('test', {} as never), /non implémenté/);
-  }
+test('Gemini indisponible explicitement', async () => {
+  const a = unvalidatedAdapter('gemini');
+  assert.equal((await a.status()).available, false);
+  await assert.rejects(() => a.reply('test', {} as never), /non implémenté/);
+});
+test('Claude absent : indisponible, erreur nommée, mode manuel conservé', async () => {
+  const adapter = new ClaudeAdapter('ds-studio-definitely-missing-cli');
+  assert.equal((await adapter.status()).available, false);
+  await assert.rejects(
+    () => adapter.reply('test', {} as never),
+    /CLI Claude absent/,
+  );
+});
+test('profil Claude sans outils, MCP, réglages personnels ni permission automatique', () => {
+  const at = (flag: string) => claudeArgs[claudeArgs.indexOf(flag) + 1];
+  assert.equal(at('--tools'), '');
+  assert.equal(at('--setting-sources'), '');
+  assert(claudeArgs.includes('--strict-mcp-config'));
+  assert(claudeArgs.includes('--no-session-persistence'));
+  assert(
+    !claudeArgs.some(
+      (a) =>
+        a.includes('dangerously') ||
+        a.includes('bypass') ||
+        a.includes('allowed'),
+    ),
+  );
 });
 test('configuration restrictive ne contient aucune permission automatique', () => {
   assert(restrictedArgs.includes('--ignore-user-config'));

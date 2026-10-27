@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Store } from '../app/server/store.js';
 import { tokensSchema } from '../app/shared/model.js';
+import { ClaudeAdapter } from '../connectors/agents/claude.js';
 import { createStudioServer } from '../app/server/http.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const seed = tokensSchema.parse(
@@ -28,6 +29,7 @@ async function fixture(
     root,
     store,
     dev,
+    claude: new ClaudeAdapter('ds-studio-definitely-missing-cli'),
     agent: {
       id: 'codex',
       async status() {

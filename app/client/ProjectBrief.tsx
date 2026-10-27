@@ -111,8 +111,8 @@ export default function ProjectBrief() {
         Exporter le brief enregistré (.md)
       </button>
       <p className="privacy-note">
-        Si vous choisissez Codex, ce brief rejoint le contexte envoyé au
-        fournisseur. Ne saisissez pas de données sensibles. Pour votre agent
+        Si vous choisissez Codex ou Claude, ce brief rejoint le contexte envoyé
+        au fournisseur. Ne saisissez pas de données sensibles. Pour votre agent
         externe, exportez vos choix dans workspace/PFE.md après relecture.
       </p>
     </details>

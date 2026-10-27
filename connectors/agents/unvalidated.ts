@@ -1,5 +1,5 @@
 import type { AgentAdapter } from './types.js';
-export const unvalidatedAdapter = (id: 'claude' | 'gemini'): AgentAdapter => ({
+export const unvalidatedAdapter = (id: 'gemini'): AgentAdapter => ({
   id,
   async status() {
     return {
@@ -9,7 +9,7 @@ export const unvalidatedAdapter = (id: 'claude' | 'gemini'): AgentAdapter => ({
   },
   async reply() {
     throw new Error(
-      `${id} non implémenté. Utilisez le mode manuel ou Codex qualifié.`,
+      `${id} non implémenté. Utilisez le mode manuel ou Codex ou Claude qualifiés.`,
     );
   },
 });

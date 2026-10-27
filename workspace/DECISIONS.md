@@ -32,3 +32,21 @@ locaux validés. Claude et Gemini ne sont pas activés sans qualification.
   teinté (révision 2, source manuelle).
 - **Preuve** : valeur relue dans l’état local ; contraste texte blanc ≈ 13,6:1 (calcul, non affiché par l’app).
 - **Annulation** : Historique → annuler la révision 2.
+
+## 2026-10-27 — Adaptateur Claude Code (expérimental)
+
+- **Problème** : seul Codex pouvait proposer des tokens depuis le chat ; Claude Code
+  était installé mais marqué « non implémenté ».
+- **Décision** : `connectors/agents/claude.ts`, sur le modèle de Codex. Appel
+  `claude -p` dans un dossier vide, sans outils (`--tools ""`), sans MCP
+  (`--strict-mcp-config`), sans réglages utilisateur/projet donc sans hooks ni plugins
+  personnels (`--setting-sources ""`), sans session conservée. Modèle Sonnet 5.5, effort bas.
+  Les réponses passent par le même diff et la même validation humaine ; source `claude`.
+- **Piste écartée** : `--bare`, qui coupe tout mais refuse la connexion par abonnement.
+- **Preuve** : `npm run check`, `npm test` (31/31), `npm run build`, `npm run scan` (0 alerte).
+  Appel isolé : outils `[]`, MCP `[]`, aucun plugin personnel chargé. Appel réel depuis
+  l'app (macOS, Claude Code 2.1.311) : proposition `color.success` reçue et affichée en diff,
+  non appliquée.
+- **Limites** : qualifié sur macOS et 2.1.311 seulement ; toute 2.1.x est acceptée car le CLI
+  se met à jour seul. Les plugins intégrés de Claude Code restent chargés (sans outils, ils
+  n'ont rien à exécuter). Le contexte PFE et le brief privé partent chez Anthropic.
