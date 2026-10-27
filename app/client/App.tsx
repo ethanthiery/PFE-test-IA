@@ -39,6 +39,22 @@ const components = [
   ['comp-preview', 'Aperçu responsive'],
   ['comp-agent', 'Assistant'],
 ] as const;
+// Icône au trait de 14 px, comme celles des boutons de la référence.
+const Icon = ({ d }: { d: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width="14"
+    height="14"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d={d} />
+  </svg>
+);
 // Une tuile de la galerie : zone de démonstration et légende, sur 1 à 3 colonnes.
 function Tile({
   id,
@@ -142,6 +158,17 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const controller = useRef<AbortController | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const searchInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const focusSearch = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInput.current?.focus();
+      }
+    };
+    addEventListener('keydown', focusSearch);
+    return () => removeEventListener('keydown', focusSearch);
+  }, []);
   const dialog = useRef<HTMLDialogElement>(null);
   const cancelButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -269,15 +296,21 @@ export default function App() {
       </a>
       <div className="shell">
         <aside className="sidebar" aria-label="Navigation de l’atelier">
-          <input
-            className="sidebar-search"
-            type="search"
-            aria-label="Rechercher un token"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un token"
-          />
-          <p className="sidebar-hint" role="status">
+          <div className="sidebar-search-row">
+            <input
+              ref={searchInput}
+              className="sidebar-search"
+              type="search"
+              aria-label="Rechercher un token"
+              aria-keyshortcuts="Meta+K Control+K"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher un token"
+            />
+            <kbd aria-hidden="true">⌘K</kbd>
+          </div>
+          {/* Visible seulement pendant un filtre, comme sur la référence ; lu par les lecteurs d'écran. */}
+          <p className={search ? 'sidebar-hint' : 'sr-only'} role="status">
             {matchingKeys.length} résultat(s).{' '}
             {search && 'La sélection courante reste accessible.'}
           </p>
@@ -306,13 +339,13 @@ export default function App() {
                 aria-pressed={key === k}
                 onClick={() => setKey(k)}
               >
+                {k}
                 {state.tokens[k].$type === 'color' && (
                   <span
                     className="dot"
                     style={{ background: String(state.tokens[k].$value) }}
                   />
                 )}
-                {k}
               </button>
             ))}
           </div>
@@ -343,9 +376,11 @@ export default function App() {
                 className="studio-primary"
                 onClick={() => void perform(exportTokens)}
               >
+                <Icon d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" />
                 Exporter les tokens
               </button>
               <label className="file-button">
+                <Icon d="M12 21V9m0 0-4 4m4-4 4 4M5 3h14" />
                 Importer un JSON
                 <input
                   type="file"
@@ -667,6 +702,19 @@ export default function App() {
                 />
               )}
             </label>
+            {state.tokens[key].$type === 'color' && (
+              <label className="color-picker">
+                Couleur
+                <input
+                  aria-label="Sélecteur de couleur"
+                  type="color"
+                  value={
+                    /^#[0-9a-fA-F]{6}$/.test(draft) ? draft : String(current)
+                  }
+                  onChange={(e) => setDraft(e.target.value)}
+                />
+              </label>
+            )}
             <button
               className="studio-primary"
               disabled={!boot || draft === String(current)}
@@ -674,19 +722,6 @@ export default function App() {
               Proposer
             </button>
           </form>
-          {state.tokens[key].$type === 'color' && (
-            <label className="color-picker">
-              Couleur
-              <input
-                aria-label="Sélecteur de couleur"
-                type="color"
-                value={
-                  /^#[0-9a-fA-F]{6}$/.test(draft) ? draft : String(current)
-                }
-                onChange={(e) => setDraft(e.target.value)}
-              />
-            </label>
-          )}
           {draft !== String(current) && (
             <p className="draft-status" role="status">
               {recovered
