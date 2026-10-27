@@ -118,41 +118,6 @@ export function Navigation() {
     </nav>
   );
 }
-export function Catalogue({ tokens }: { tokens: Tokens }) {
-  return (
-    <DSProvider tokens={tokens}>
-      <div className="catalogue">
-        <section>
-          <div className="section-label">01 / ACTIONS</div>
-          <h3>Un langage commun.</h3>
-          <p>Les mêmes tokens, du composant à l’écran.</p>
-          <div className="button-row">
-            <Button>Action principale</Button>
-            <Button variant="secondary">Secondaire</Button>
-            <Button variant="danger">Supprimer</Button>
-            <Button disabled>Indisponible</Button>
-          </div>
-          <p className="ds-caption">
-            Survolez, utilisez Tab et activez les boutons. Focus et états natifs
-            inclus.
-          </p>
-        </section>
-        <section>
-          <div className="section-label">02 / CONTENUS</div>
-          <BookingCard />
-        </section>
-        <section>
-          <div className="section-label">03 / SAISIE</div>
-          <ExampleForm />
-        </section>
-        <section>
-          <div className="section-label">04 / NAVIGATION</div>
-          <Navigation />
-        </section>
-      </div>
-    </DSProvider>
-  );
-}
 export function Scenario({
   tokens,
   scenario,
