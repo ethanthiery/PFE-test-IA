@@ -269,10 +269,6 @@ export default function App() {
       </a>
       <div className="shell">
         <aside className="sidebar" aria-label="Navigation de l’atelier">
-          <div className="sidebar-brand">
-            <span className="brand-symbol">ds.</span>
-            <strong>DS-Studio</strong>
-          </div>
           <input
             className="sidebar-search"
             type="search"
@@ -286,7 +282,9 @@ export default function App() {
             {search && 'La sélection courante reste accessible.'}
           </p>
           <nav className="sidebar-group" aria-label="Sections">
-            <a href="#ds-title">Galerie</a>
+            <a href="#ds-title" aria-current="page">
+              Galerie
+            </a>
             <a href="#agent-title">Assistant</a>
             <a href="#mobile-title">Aperçu responsive</a>
             <button
@@ -678,7 +676,7 @@ export default function App() {
           </form>
           {state.tokens[key].$type === 'color' && (
             <label className="color-picker">
-              Choisir visuellement
+              Couleur
               <input
                 aria-label="Sélecteur de couleur"
                 type="color"
