@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CodexAdapter,
+  parseAgentReply,
   restrictedArgs,
   runCli,
 } from '../connectors/agents/codex.js';
@@ -107,4 +108,24 @@ test('sortie UTF-8 scindée entre buffers conservée', async () => {
     '',
   );
   assert.equal(result, 'é');
+});
+
+test('réponse IA : dimension en texte numérique convertie, le reste intact', () => {
+  const tokens = {
+    'radius.control': { $type: 'dimension', $value: 10 },
+    'color.brand': { $type: 'color', $value: '#181818' },
+  } as never;
+  const reply = parseAgentReply(
+    '{"message":"ok","changes":[{"key":"radius.control","value":"22"},{"key":"color.brand","value":"#111111"}]}',
+    tokens,
+  );
+  assert.deepEqual(reply.changes, [
+    { key: 'radius.control', value: 22 },
+    { key: 'color.brand', value: '#111111' },
+  ]);
+  const unit = parseAgentReply(
+    '{"message":"ok","changes":[{"key":"radius.control","value":"22px"}]}',
+    tokens,
+  );
+  assert.equal(unit.changes[0].value, '22px');
 });

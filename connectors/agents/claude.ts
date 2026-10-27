@@ -107,7 +107,7 @@ export class ClaudeAdapter implements AgentAdapter {
         throw new Error(
           'Le CLI a utilisé un outil inattendu. Intégration refusée.',
         );
-      return parseAgentReply(result.result);
+      return parseAgentReply(result.result, context.tokens);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
