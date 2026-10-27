@@ -33,7 +33,7 @@
   },
   "color.danger": {
     "$type": "color",
-    "$value": "#B4233E"
+    "$value": "#1F4FB4"
   },
   "color.success": {
     "$type": "color",
