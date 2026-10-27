@@ -3,7 +3,7 @@
    galerie en grille, panneau de réglages. Le DS garde ses propres tokens. */
 @font-face {
   font-family: 'Inter';
-  src: url('./fonts/inter-latin.woff2') format('woff2');
+  src: url('./fonts/InterVariable.woff2') format('woff2');
   font-weight: 100 900;
   font-display: swap;
 }
@@ -11,10 +11,14 @@
   --studio-ink: #171717;
   --studio-ink-hover: #404040;
   --studio-muted: #737373;
-  --studio-line: #0000001f;
+  --studio-line: #1717171f;
+  --studio-line-faint: #1717170c;
   --studio-soft: #f4f4f5;
-  --studio-hover: #0000000f;
+  --studio-hover: #00000014;
+  --studio-active: #00000012;
   --studio-canvas: #fafafa;
+  --studio-input: #e5e5e5;
+  --studio-focus: #6b97ff;
 }
 * {
   box-sizing: border-box;
@@ -26,6 +30,8 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 button,
 input,
@@ -47,12 +53,13 @@ button,
   color: var(--studio-ink);
   cursor: pointer;
   font-size: 12px;
+  line-height: 18px;
   font-weight: 400;
   transition: background 0.12s;
 }
 button:hover,
 .file-button:hover {
-  background: #0000001a;
+  background: #0000001f;
 }
 button:disabled {
   cursor: not-allowed;
@@ -63,13 +70,13 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 .file-button:focus-within {
-  outline: 3px solid var(--studio-ink);
-  outline-offset: 3px;
+  outline: 2px solid var(--studio-focus);
+  outline-offset: 2px;
 }
 input,
 select,
 textarea {
-  border: 1px solid var(--studio-line);
+  border: 1px solid var(--studio-input);
   border-radius: 8px;
   padding: 5px 10px;
   font-size: 13px;
@@ -387,25 +394,27 @@ del {
   top: 0;
   height: 100vh;
   overflow: auto;
-  padding: 16px 8px 16px 16px;
+  padding: 16px 8px 8px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 .sidebar-search {
   width: 100%;
   height: 32px;
+  flex: none;
   border: 0;
   border-radius: 8px;
   padding: 0 8px 0 30px;
   background: transparent
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='6' cy='6' r='4.5'/%3E%3Cpath d='m9.5 9.5 3 3'/%3E%3C/svg%3E")
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%23737373' stroke-width='1.5' stroke-linecap='round'%3E%3Ccircle cx='6' cy='6' r='4.5'/%3E%3Cpath d='m9.5 9.5 3 3'/%3E%3C/svg%3E")
     no-repeat 9px 50%;
   font-size: 13px;
+  color: var(--studio-ink);
 }
 .sidebar-hint {
-  font-size: 11px;
-  margin: -14px 8px 0;
+  font-size: 12px;
+  margin: -20px 8px 0;
   color: var(--studio-muted);
 }
 .sidebar-group {
@@ -425,33 +434,34 @@ del {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: var(--studio-ink);
+  color: var(--studio-muted);
   font-size: 13px;
+  line-height: 20px;
   font-weight: 400;
   text-align: left;
   text-decoration: none;
   transition: background 0.12s;
 }
-.sidebar-token,
-.sidebar-group a[href^='#comp-'] {
-  color: var(--studio-muted) !important;
-}
 .sidebar-group a:hover,
-.sidebar-group button:hover,
+.sidebar-group button:hover {
+  background: var(--studio-active);
+}
 .sidebar-group button[aria-pressed='true'],
 .sidebar-group a[aria-current='page'] {
-  background: #0000000f;
-  color: var(--studio-ink) !important;
+  background: var(--studio-active);
+  color: var(--studio-ink);
+  font-weight: 550;
+  font-variation-settings: 'opsz' 18;
 }
 .sidebar-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 32px;
-  padding: 0 8px;
-  margin-bottom: 4px;
+  margin: 0 8px;
   border-bottom: 1px solid var(--studio-line);
   font-size: 12px;
+  line-height: 16px;
   color: var(--studio-ink);
 }
 .sidebar-title span {
@@ -486,15 +496,17 @@ del {
   padding: 112px 24px;
 }
 .content-head h1 {
+  font-variation-settings: 'opsz' 25;
   font-size: 28px;
   line-height: 28px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: normal;
   margin: 0 0 8px;
 }
 .content-head p {
   color: var(--studio-muted);
   font-size: 13px;
+  line-height: 20px;
   margin: 0 0 16px;
 }
 .intro-actions {
@@ -536,8 +548,8 @@ del {
   flex: 1;
   display: grid;
   place-items: center;
-  padding: 24px;
-  min-height: 240px;
+  padding: 64px 24px;
+  min-height: 254px;
 }
 .tile-demo > .ds {
   width: 100%;
@@ -556,9 +568,13 @@ del {
   min-width: 0;
 }
 .tile figcaption {
-  padding: 10px 16px;
-  border-top: 1px solid var(--studio-line);
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-top: 1px solid var(--studio-line-faint);
   font-size: 13px;
+  line-height: 20px;
   color: var(--studio-muted);
 }
 .customizer {
@@ -574,14 +590,16 @@ del {
 }
 .customizer .token-form {
   grid-template-columns: 1fr;
-  gap: 4px;
 }
 .customizer .editor-title {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .customizer .editor-title h3 {
-  font-size: 15px;
-  font-weight: 600;
+  font-variation-settings: 'opsz' 18;
+  font-size: 16px;
+  line-height: 16px;
+  font-weight: 550;
+  margin: 0;
 }
 .customizer .editor-title > span {
   font-size: 12px;
@@ -598,19 +616,36 @@ del {
   font-weight: 400;
   color: var(--studio-muted);
 }
+.customizer .token-form {
+  gap: 6px;
+}
+/* Contrôles « fantômes » comme sur la référence : pas de cadre, fond au survol. */
 .customizer .field select,
-.customizer .field input {
-  width: 128px;
+.customizer .field input,
+.customizer .color-picker input {
+  width: 112px;
+  height: 28px;
   flex: none;
-  padding: 3px 8px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--studio-ink);
+  font-size: 13px;
+  text-align: right;
+  text-align-last: right;
+}
+.customizer .field select:hover,
+.customizer .field input:hover,
+.customizer .field input:focus {
+  background-color: #0000000a;
 }
 .customizer .color-picker input {
-  width: 128px;
-  height: 28px;
+  padding: 4px 8px;
 }
 .customizer .token-form button {
   width: 100%;
-  margin-top: 10px;
+  margin-top: 16px;
   min-height: 28px;
   font-size: 12px;
 }
