@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   BookingCard,
   Button,
@@ -7,7 +7,17 @@ import {
   Navigation,
   Scenario,
 } from './DesignSystem.js';
-import ComponentPage from './ComponentPage.js';
+import {
+  ComponentPage,
+  FoundationPage,
+  Icon,
+  IntroPage,
+  JournalPage,
+  PageHead,
+  Showcase,
+  type Page,
+} from './Docs.js';
+import FluidList from './FluidList.js';
 import ProjectBrief from './ProjectBrief.js';
 import { useTokenDraft } from './useTokenDraft.js';
 import {
@@ -32,56 +42,77 @@ const devices = [
   { label: 'Grand · 430', width: 430 },
   { label: 'Desktop · 1024', width: 1024 },
 ];
-// Chaque composant a sa page : #/composants/<slug>.
-const components = [
-  { slug: 'button', label: 'Button' },
-  { slug: 'booking-card', label: 'BookingCard' },
-  { slug: 'example-form', label: 'ExampleForm' },
-  { slug: 'navigation', label: 'Navigation' },
+// Composants Mainline à venir : chaque nom a sa tuile et sa page, vides pour l'instant.
+// Renommez, ajoutez ou retirez des entrées ici.
+const components: { slug: string; label: string; span: 1 | 2 }[] = [
+  { slug: 'bouton', label: 'Bouton', span: 2 },
+  { slug: 'billet', label: 'Billet', span: 1 },
+  { slug: 'minuteur', label: 'Minuteur', span: 1 },
+  { slug: 'carte-trajet', label: 'Carte du trajet', span: 2 },
+  { slug: 'onglets', label: 'Onglets', span: 1 },
+  { slug: 'interrupteur', label: 'Interrupteur', span: 1 },
+  { slug: 'badge', label: 'Badge', span: 1 },
+  { slug: 'champ', label: 'Champ de saisie', span: 2 },
+  { slug: 'liste', label: 'Liste', span: 1 },
+  { slug: 'feuille', label: 'Feuille', span: 1 },
+  { slug: 'notification', label: 'Notification', span: 1 },
+  { slug: 'carte-postale', label: 'Carte postale', span: 1 },
+];
+const foundations: {
+  slug: string;
+  label: string;
+  lead: string;
+  prefix: string;
+}[] = [
+  {
+    slug: 'couleurs',
+    label: 'Couleurs',
+    lead: 'Les couleurs sémantiques de Mainline. Choisissez-en une pour proposer une nouvelle valeur.',
+    prefix: 'color.',
+  },
+  {
+    slug: 'typographie',
+    label: 'Typographie',
+    lead: 'La famille et les tailles de texte.',
+    prefix: 'font.',
+  },
+  {
+    slug: 'espacements',
+    label: 'Espacements',
+    lead: 'Les écarts entre les éléments, en pixels.',
+    prefix: 'space.',
+  },
+  {
+    slug: 'rayons',
+    label: 'Rayons',
+    lead: 'Les arrondis des contrôles, en pixels.',
+    prefix: 'radius.',
+  },
+];
+// Ordre de lecture du site, pour les flèches précédent / suivant.
+const pages: Page[] = [
+  { href: '#/', label: 'Vitrine' },
+  { href: '#/introduction', label: 'Introduction' },
+  { href: '#/journal', label: 'Journal des versions' },
+  ...foundations.map((f) => ({
+    href: `#/fondations/${f.slug}`,
+    label: f.label,
+  })),
+  ...components.map((c) => ({
+    href: `#/composants/${c.slug}`,
+    label: c.label,
+  })),
+  { href: '#/atelier/apercu', label: 'Aperçu des tokens' },
+  { href: '#/atelier/assistant', label: 'Assistant' },
 ];
 function useHash() {
-  const [hash, setHash] = useState(location.hash);
+  const [hash, setHash] = useState(location.hash || '#/');
   useEffect(() => {
-    const update = () => setHash(location.hash);
+    const update = () => setHash(location.hash || '#/');
     addEventListener('hashchange', update);
     return () => removeEventListener('hashchange', update);
   }, []);
   return hash;
-}
-// Icône au trait de 14 px, comme celles des boutons de la référence.
-const Icon = ({ d }: { d: string }) => (
-  <svg
-    viewBox="0 0 24 24"
-    width="14"
-    height="14"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d={d} />
-  </svg>
-);
-// Une tuile de la galerie : zone de démonstration et légende, sur 1 à 3 colonnes.
-function Tile({
-  id,
-  label,
-  span = 1,
-  children,
-}: {
-  id: string;
-  label: string;
-  span?: 1 | 2 | 3;
-  children: ReactNode;
-}) {
-  return (
-    <figure id={id} className={`tile span-${span}`}>
-      <div className="tile-demo">{children}</div>
-      <figcaption>{label}</figcaption>
-    </figure>
-  );
 }
 function useDesignState() {
   const [state, setState] = useState<State>();
@@ -166,19 +197,15 @@ export default function App() {
   const [thinking, setThinking] = useState(false);
   const [saving, setSaving] = useState(false);
   const controller = useRef<AbortController | null>(null);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const hash = useHash();
-  const pageIndex = components.findIndex(
-    (c) => hash === `#/composants/${c.slug}`,
-  );
-  const page = components[pageIndex];
+  const pageIndex = pages.findIndex((p) => p.href === hash);
+  const route = pages[pageIndex] ? hash : '#/';
+  const prev = pages[pageIndex - 1];
+  const next = pages[pageIndex + 1];
   useEffect(() => {
-    // Retour à la galerie par une ancre (#agent-title…) : la cible n'existe qu'après le rendu.
-    if (page) document.getElementById('doc-title')?.focus();
-    else if (hash && !hash.startsWith('#/'))
-      document.getElementById(hash.slice(1))?.scrollIntoView();
-    else if (!hash) scrollTo(0, 0);
-  }, [hash, page]);
+    scrollTo(0, 0);
+    if (route !== '#/') document.getElementById('doc-title')?.focus();
+  }, [route]);
   const searchInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const focusSearch = (e: KeyboardEvent) => {
@@ -312,11 +339,19 @@ export default function App() {
   );
   return (
     <>
-      <a className="skip-link" href="#ds-title">
+      <a
+        className="skip-link"
+        href="#tokens-panel"
+        onClick={(e) => {
+          // Pas de changement d'adresse : on reste sur la page en cours.
+          e.preventDefault();
+          document.getElementById('tokens-panel')?.focus();
+        }}
+      >
         Aller aux tokens
       </a>
       <div className="shell">
-        <aside className="sidebar" aria-label="Navigation de l’atelier">
+        <aside className="sidebar" aria-label="Navigation du design system">
           <div className="sidebar-search-row">
             <input
               ref={searchInput}
@@ -335,105 +370,93 @@ export default function App() {
             {matchingKeys.length} résultat(s).{' '}
             {search && 'La sélection courante reste accessible.'}
           </p>
-          <nav className="sidebar-group" aria-label="Sections">
-            <a href="#ds-title" aria-current={page ? undefined : 'page'}>
-              Galerie
-            </a>
-            <a href="#agent-title">Assistant</a>
-            <a href="#mobile-title">Aperçu responsive</a>
-            <button
-              onClick={() => setHistoryOpen(!historyOpen)}
-              aria-expanded={historyOpen}
-            >
-              Historique · {state.revision}
-            </button>
-          </nav>
-          <div className="sidebar-group">
-            <div className="sidebar-title">
-              Tokens <span>{matchingKeys.length}</span>
-            </div>
-            {matchingKeys.map((k) => (
-              <button
-                key={k}
-                className="sidebar-token"
-                aria-label={`Sélectionner ${k}`}
-                aria-pressed={key === k}
-                onClick={() => setKey(k)}
+          <nav aria-label="Design system">
+            <FluidList className="sidebar-group">
+              <a
+                href="#/"
+                data-fluid
+                aria-current={route === '#/' ? 'page' : undefined}
               >
-                {k}
-                {state.tokens[k].$type === 'color' && (
-                  <span
-                    className="dot"
-                    style={{ background: String(state.tokens[k].$value) }}
-                  />
-                )}
-              </button>
-            ))}
-          </div>
-          <div className="sidebar-group">
+                Vitrine
+              </a>
+              <a
+                href="#/introduction"
+                data-fluid
+                aria-current={route === '#/introduction' ? 'page' : undefined}
+              >
+                Introduction
+              </a>
+              <a
+                href="#/journal"
+                data-fluid
+                aria-current={route === '#/journal' ? 'page' : undefined}
+              >
+                Journal des versions
+                {state.history.length > 0 && <span className="new-dot" />}
+              </a>
+            </FluidList>
+            <div className="sidebar-title">
+              Fondations <span>{foundations.length}</span>
+            </div>
+            <FluidList className="sidebar-group">
+              {foundations.map((f) => (
+                <a
+                  key={f.slug}
+                  href={`#/fondations/${f.slug}`}
+                  data-fluid
+                  aria-current={
+                    route === `#/fondations/${f.slug}` ? 'page' : undefined
+                  }
+                >
+                  {f.label}
+                </a>
+              ))}
+            </FluidList>
             <div className="sidebar-title">
               Composants <span>{components.length}</span>
             </div>
-            {components.map((c) => (
+            <FluidList className="sidebar-group">
+              {components.map((c) => (
+                <a
+                  key={c.slug}
+                  href={`#/composants/${c.slug}`}
+                  data-fluid
+                  aria-current={
+                    route === `#/composants/${c.slug}` ? 'page' : undefined
+                  }
+                >
+                  {c.label}
+                </a>
+              ))}
+            </FluidList>
+            <div className="sidebar-title">
+              Atelier <span>2</span>
+            </div>
+            <FluidList className="sidebar-group">
               <a
-                key={c.slug}
-                href={`#/composants/${c.slug}`}
-                aria-current={page === c ? 'page' : undefined}
+                href="#/atelier/apercu"
+                data-fluid
+                aria-current={route === '#/atelier/apercu' ? 'page' : undefined}
               >
-                {c.label}
+                Aperçu des tokens
               </a>
-            ))}
-          </div>
+              <a
+                href="#/atelier/assistant"
+                data-fluid
+                aria-current={
+                  route === '#/atelier/assistant' ? 'page' : undefined
+                }
+              >
+                Assistant
+              </a>
+            </FluidList>
+          </nav>
           <div className="sidebar-foot">
             <span className="local-badge">● Local · V2</span>
             <span>{boot?.figma.label ?? 'Figma non connecté'}</span>
           </div>
         </aside>
         <main className="content">
-          {!page && (
-            <header className="content-head">
-              <h1>Une source. Toutes les vues.</h1>
-              <p>
-                Explorez, proposez, validez. Construisez ensuite votre propre
-                outil.
-              </p>
-              <div className="intro-actions">
-                <button
-                  className="studio-primary"
-                  onClick={() => void perform(exportTokens)}
-                >
-                  <Icon d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" />
-                  Exporter les tokens
-                </button>
-                <label className="file-button">
-                  <Icon d="M12 21V9m0 0-4 4m4-4 4 4M5 3h14" />
-                  Importer un JSON
-                  <input
-                    type="file"
-                    accept=".json,application/json"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      e.target.value = '';
-                      if (file)
-                        void perform(async () => {
-                          if (file.size > 128000)
-                            throw new Error(
-                              'Fichier trop volumineux (128 Ko maximum).',
-                            );
-                          const tokens = JSON.parse(await file.text());
-                          setProposal(
-                            await request('import', {
-                              revision: state.revision,
-                              tokens,
-                            }),
-                          );
-                        });
-                    }}
-                  />
-                </label>
-              </div>
-            </header>
-          )}
           <div className="feedback" aria-live="polite">
             {(error || stateError) && (
               <p className="error" role="alert">
@@ -446,250 +469,298 @@ export default function App() {
               </p>
             )}
           </div>
-          {historyOpen && (
-            <section
-              className="history"
-              aria-label="Historique des changements"
-            >
-              <h2>Un historique, pas un écrasement.</h2>
-              <p>
-                Annulez un changement précis. Les autres tokens restent intacts.
-                Une annulation s’enregistre elle aussi.
-              </p>
-              {!state.history.length && <p>Aucun changement enregistré.</p>}
-              <ol>
-                {[...state.history].reverse().map((event) => (
-                  <li key={event.id}>
-                    <div>
-                      <strong>Révision {event.revision}</strong> ·{' '}
-                      {event.source} ·{' '}
-                      <time>
-                        {new Date(event.date).toLocaleString('fr-FR')}
-                      </time>
-                      <p>{event.patches.map((p) => p.key).join(', ')}</p>
-                    </div>
-                    <button
-                      onClick={() =>
-                        void perform(async () =>
-                          setProposal(
-                            await request('undo', {
-                              revision: state.revision,
-                              id: event.id,
-                            }),
-                          ),
-                        )
-                      }
+          {route === '#/' && (
+            <>
+              <header className="content-head reveal-in">
+                <div className="doc-head-row">
+                  <h1>Mainline</h1>
+                  <nav className="doc-arrows" aria-label="Pages voisines">
+                    <span aria-hidden="true">
+                      <Icon d="M19 12H5m0 0 6-6m-6 6 6 6" size={16} />
+                    </span>
+                    <a
+                      href="#/introduction"
+                      aria-label="Suivant : Introduction"
                     >
-                      Annuler la révision {event.revision}
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          )}
-          {page ? (
-            <ComponentPage
-              key={page.slug}
-              label={page.label}
-              prev={components[pageIndex - 1]}
-              next={components[pageIndex + 1]}
-            />
-          ) : (
-            <section className="ds-panel" aria-labelledby="ds-title">
+                      <Icon d="M5 12h14m0 0-6-6m6 6-6 6" size={16} />
+                    </a>
+                  </nav>
+                </div>
+                <p>Le design system de Mainline : Focus Journey.</p>
+                <div className="intro-actions">
+                  <button
+                    className="studio-primary"
+                    onClick={() => void perform(exportTokens)}
+                  >
+                    <Icon d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" />
+                    Exporter les tokens
+                  </button>
+                  <label className="file-button">
+                    <Icon d="M12 21V9m0 0-4 4m4-4 4 4M5 3h14" />
+                    Importer un JSON
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = '';
+                        if (file)
+                          void perform(async () => {
+                            if (file.size > 128000)
+                              throw new Error(
+                                'Fichier trop volumineux (128 Ko maximum).',
+                              );
+                            const tokens = JSON.parse(await file.text());
+                            setProposal(
+                              await request('import', {
+                                revision: state.revision,
+                                tokens,
+                              }),
+                            );
+                          });
+                      }}
+                    />
+                  </label>
+                  <a className="ghost-link" href="#/introduction">
+                    Lire l’introduction
+                  </a>
+                </div>
+              </header>
               <h2 id="ds-title" className="sr-only" tabIndex={-1}>
-                Design System
+                Composants
               </h2>
-              {/* Chaque tuile accueille un composant : remplacez-les par les vôtres. */}
-              <div className="bento">
-                <Tile id="comp-button" label="Button" span={2}>
-                  <DSProvider tokens={state.tokens}>
+              <Showcase components={components} />
+            </>
+          )}
+          {route === '#/introduction' && <IntroPage prev={prev} next={next} />}
+          {route === '#/journal' && (
+            <JournalPage
+              history={state.history}
+              prev={prev}
+              next={next}
+              onUndo={(id) =>
+                void perform(async () =>
+                  setProposal(
+                    await request('undo', { revision: state.revision, id }),
+                  ),
+                )
+              }
+            />
+          )}
+          {foundations.map(
+            (f) =>
+              route === `#/fondations/${f.slug}` && (
+                <FoundationPage
+                  key={f.slug}
+                  title={f.label}
+                  lead={f.lead}
+                  keys={tokenKeys.filter((k) => k.startsWith(f.prefix))}
+                  tokens={state.tokens}
+                  selected={key}
+                  onSelect={setKey}
+                  prev={prev}
+                  next={next}
+                />
+              ),
+          )}
+          {components.map(
+            (c) =>
+              route === `#/composants/${c.slug}` && (
+                <ComponentPage
+                  key={c.slug}
+                  label={c.label}
+                  prev={prev}
+                  next={next}
+                />
+              ),
+          )}
+          {route === '#/atelier/apercu' && (
+            <article className="doc-page doc-page-wide">
+              <PageHead
+                title="Aperçu des tokens"
+                lead="Vos tokens appliqués aux composants d’exemple Lisière, ici et dans un écran réel. Ils seront remplacés par ceux de Mainline."
+                prev={prev}
+                next={next}
+              />
+              <section
+                className="ds-panel doc-section"
+                aria-labelledby="ds-catalogue"
+              >
+                <h2 id="ds-catalogue">Design System</h2>
+                <DSProvider tokens={state.tokens}>
+                  <div className="catalogue-grid">
                     <div className="button-row">
                       <Button>Action principale</Button>
                       <Button variant="secondary">Secondaire</Button>
                       <Button variant="danger">Supprimer</Button>
                       <Button disabled>Indisponible</Button>
                     </div>
-                  </DSProvider>
-                </Tile>
-                <Tile id="comp-card" label="BookingCard">
-                  <DSProvider tokens={state.tokens}>
                     <BookingCard />
-                  </DSProvider>
-                </Tile>
-                <Tile id="comp-form" label="ExampleForm">
-                  <DSProvider tokens={state.tokens}>
                     <ExampleForm />
-                  </DSProvider>
-                </Tile>
-                <Tile id="comp-nav" label="Navigation" span={2}>
-                  <DSProvider tokens={state.tokens}>
                     <Navigation />
-                  </DSProvider>
-                </Tile>
-                <Tile
-                  id="comp-preview"
-                  label={`Aperçu responsive · ${devices[device].width} px CSS, aucun zoom`}
-                  span={3}
-                >
-                  <div className="tile-body">
-                    <h2 id="mobile-title" className="sr-only" tabIndex={-1}>
-                      Aperçu responsive
-                    </h2>
-                    <div className="preview-controls">
-                      <label className="field">
-                        Viewport
-                        <select
-                          value={device}
-                          onChange={(e) => setDevice(Number(e.target.value))}
-                        >
-                          {devices.map((d, i) => (
-                            <option key={d.width} value={i}>
-                              {d.label}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className="field">
-                        Scénario
-                        <select
-                          value={scenario}
-                          onChange={(e) => setScenario(e.target.value)}
-                        >
-                          <option value="cards">Découvrir</option>
-                          <option value="form">Inscription</option>
-                        </select>
-                      </label>
-                    </div>
-                    <div className="viewport-scroll">
-                      <iframe
-                        title="Aperçu responsive"
-                        src={`/?preview=1&scenario=${scenario}`}
-                        width={devices[device].width}
-                        height={760}
-                      />
-                    </div>
                   </div>
-                </Tile>
-                <Tile
-                  id="comp-agent"
-                  label="Assistant · contexte PFE et tokens autorisés"
-                  span={3}
-                >
-                  <div className="tile-body agent-panel">
-                    <h2 id="agent-title" className="sr-only" tabIndex={-1}>
-                      Contexte et assistant
-                    </h2>
-                    <ProjectBrief />
+                </DSProvider>
+              </section>
+              <section className="doc-section">
+                <h2 id="mobile-title">Aperçu responsive</h2>
+                <p>{devices[device].width} px CSS · aucun zoom appliqué</p>
+                <div className="tile-body">
+                  <div className="preview-controls">
                     <label className="field">
-                      Mode de travail
+                      Viewport
                       <select
-                        value={agent}
-                        onChange={(e) => setAgent(e.target.value)}
+                        value={device}
+                        onChange={(e) => setDevice(Number(e.target.value))}
                       >
-                        <option value="manual">Manuel · sans compte IA</option>
-                        <option value="codex">
-                          Codex · expérimental qualifié
-                        </option>
-                        <option value="claude">
-                          Claude Code · expérimental
-                        </option>
-                        <option value="gemini" disabled>
-                          Gemini CLI · non implémenté
-                        </option>
+                        {devices.map((d, i) => (
+                          <option key={d.width} value={i}>
+                            {d.label}
+                          </option>
+                        ))}
                       </select>
                     </label>
-                    {agent === 'manual' ? (
-                      <div className="agent-empty">
-                        <div className="line-icon">✳</div>
-                        <h3>Le Design System vous appartient.</h3>
-                        <p>
-                          Aucun compte nécessaire. Sélectionnez un token dans le
-                          panneau central, modifiez sa valeur et examinez le
-                          diff avant de l’appliquer.
-                        </p>
-                        <ol>
-                          <li>Choisissez une couleur.</li>
-                          <li>Proposez un changement.</li>
-                          <li>Validez et observez les deux vues.</li>
-                        </ol>
-                        <p className="privacy-note">
-                          Les changements restent sur votre machine. Figma et
-                          l’IA sont facultatifs.
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="privacy-note">
-                          {selectedAgent?.detail ?? 'Détection du CLI…'}
-                        </p>
-                        <p className="privacy-note">
-                          Envoi à {agentName} : tokens, workspace/PFE.md, brief
-                          privé, DESIGN_RULES.md et 10 messages récents. Aucun
-                          outil ni commande ; propositions seulement.
-                        </p>
-                        <div
-                          className="chat-log"
-                          aria-label="Conversation"
-                          aria-live="polite"
-                        >
-                          {chat.map((c, i) => (
-                            <article
-                              className={`chat-message ${c.role}`}
-                              key={i}
-                            >
-                              <strong>
-                                {c.role === 'user' ? 'Vous' : agentName}
-                              </strong>
-                              <p>{c.text}</p>
-                            </article>
-                          ))}
-                        </div>
-                        <form
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            void sendMessage();
-                          }}
-                        >
-                          <label className="field">
-                            Votre demande
-                            <textarea
-                              value={message}
-                              onChange={(e) => setMessage(e.target.value)}
-                              maxLength={8000}
-                              placeholder="Propose une couleur de marque plus chaleureuse."
-                              disabled={thinking}
-                            />
-                          </label>
-                          <button
-                            className="studio-primary"
-                            disabled={
-                              thinking ||
-                              !message.trim() ||
-                              !selectedAgent?.available
-                            }
-                          >
-                            {thinking
-                              ? 'Réflexion en cours…'
-                              : `Envoyer à ${agentName}`}
-                          </button>
-                          {thinking && (
-                            <button
-                              type="button"
-                              onClick={() => controller.current?.abort()}
-                            >
-                              Arrêter
-                            </button>
-                          )}
-                        </form>
-                      </>
-                    )}
+                    <label className="field">
+                      Scénario
+                      <select
+                        value={scenario}
+                        onChange={(e) => setScenario(e.target.value)}
+                      >
+                        <option value="cards">Découvrir</option>
+                        <option value="form">Inscription</option>
+                      </select>
+                    </label>
                   </div>
-                </Tile>
+                  <div className="viewport-scroll">
+                    <iframe
+                      title="Aperçu responsive"
+                      src={`/?preview=1&scenario=${scenario}`}
+                      width={devices[device].width}
+                      height={760}
+                    />
+                  </div>
+                </div>
+              </section>
+            </article>
+          )}
+          {route === '#/atelier/assistant' && (
+            <article className="doc-page">
+              <PageHead
+                title="Assistant"
+                lead="Demandez une proposition de tokens. Rien n’est appliqué sans votre validation."
+                prev={prev}
+                next={next}
+              />
+              <div className="agent-panel">
+                <h2 id="agent-title" className="sr-only" tabIndex={-1}>
+                  Contexte et assistant
+                </h2>
+                <ProjectBrief />
+                <label className="field">
+                  Mode de travail
+                  <select
+                    value={agent}
+                    onChange={(e) => setAgent(e.target.value)}
+                  >
+                    <option value="manual">Manuel · sans compte IA</option>
+                    <option value="codex">Codex · expérimental qualifié</option>
+                    <option value="claude">Claude Code · expérimental</option>
+                    <option value="gemini" disabled>
+                      Gemini CLI · non implémenté
+                    </option>
+                  </select>
+                </label>
+                {agent === 'manual' ? (
+                  <div className="agent-empty">
+                    <div className="line-icon">✳</div>
+                    <h3>Le Design System vous appartient.</h3>
+                    <p>
+                      Aucun compte nécessaire. Sélectionnez un token dans le
+                      panneau central, modifiez sa valeur et examinez le diff
+                      avant de l’appliquer.
+                    </p>
+                    <ol>
+                      <li>Choisissez une couleur.</li>
+                      <li>Proposez un changement.</li>
+                      <li>Validez et observez les deux vues.</li>
+                    </ol>
+                    <p className="privacy-note">
+                      Les changements restent sur votre machine. Figma et l’IA
+                      sont facultatifs.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="privacy-note">
+                      {selectedAgent?.detail ?? 'Détection du CLI…'}
+                    </p>
+                    <p className="privacy-note">
+                      Envoi à {agentName} : tokens, workspace/PFE.md, brief
+                      privé, DESIGN_RULES.md et 10 messages récents. Aucun outil
+                      ni commande ; propositions seulement.
+                    </p>
+                    <div
+                      className="chat-log"
+                      aria-label="Conversation"
+                      aria-live="polite"
+                    >
+                      {chat.map((c, i) => (
+                        <article className={`chat-message ${c.role}`} key={i}>
+                          <strong>
+                            {c.role === 'user' ? 'Vous' : agentName}
+                          </strong>
+                          <p>{c.text}</p>
+                        </article>
+                      ))}
+                    </div>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void sendMessage();
+                      }}
+                    >
+                      <label className="field">
+                        Votre demande
+                        <textarea
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                          maxLength={8000}
+                          placeholder="Propose une couleur de marque plus chaleureuse."
+                          disabled={thinking}
+                        />
+                      </label>
+                      <button
+                        className="studio-primary"
+                        disabled={
+                          thinking ||
+                          !message.trim() ||
+                          !selectedAgent?.available
+                        }
+                      >
+                        {thinking
+                          ? 'Réflexion en cours…'
+                          : `Envoyer à ${agentName}`}
+                      </button>
+                      {thinking && (
+                        <button
+                          type="button"
+                          onClick={() => controller.current?.abort()}
+                        >
+                          Arrêter
+                        </button>
+                      )}
+                    </form>
+                  </>
+                )}
               </div>
-            </section>
+            </article>
           )}
         </main>
-        <aside className="customizer" aria-label="Personnaliser les tokens">
+        <aside
+          id="tokens-panel"
+          tabIndex={-1}
+          className="customizer"
+          aria-label="Personnaliser les tokens"
+        >
           <div className="editor-title">
             <h3>Tokens sémantiques</h3>
             <span>{tokenKeys.length} tokens</span>
@@ -810,7 +881,7 @@ export default function App() {
             </p>
           )}
           <p className="customizer-foot">
-            Lisière · exemple fictif, sources locales · r{state.revision}
+            Mainline · révision {state.revision} · conçu par Ethan Thiery
           </p>
         </aside>
       </div>
