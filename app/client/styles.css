@@ -717,6 +717,112 @@ del {
   }
 }
 
+/* Page de composant : mesures relevées sur les pages « docs » de la référence. */
+.doc-page {
+  max-width: 632px;
+  margin: 0 auto;
+  padding: 112px 0;
+}
+.doc-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 44px;
+}
+.doc-head h1 {
+  font-size: 28px;
+  line-height: 28px;
+  font-weight: 700;
+  font-variation-settings: 'opsz' 25;
+  margin: 0 0 8px;
+}
+.doc-head h1:focus {
+  outline: none;
+}
+.doc-arrows {
+  display: flex;
+  gap: 4px;
+  margin: -4px 0;
+}
+.doc-arrows a,
+.doc-arrows span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: var(--studio-ink);
+}
+.doc-arrows a:hover {
+  background: var(--studio-active);
+}
+.doc-arrows span {
+  color: var(--studio-muted);
+  opacity: 0.4;
+}
+.doc-section {
+  margin-bottom: 56px;
+}
+.doc-section h2,
+.doc-section h3 {
+  font-size: 16px;
+  line-height: 16px;
+  font-weight: 550;
+  font-variation-settings: 'opsz' 18;
+  margin: 0 0 8px;
+}
+.doc-install {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+.doc-install button {
+  min-height: 36px;
+  font-size: 13px;
+  padding: 0 16px;
+}
+.doc-usage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+/* Emplacement vide : réserve la place d'un texte à venir, sans rien afficher. */
+.doc-slot {
+  min-height: 20px;
+  margin: 0;
+  padding: 0;
+}
+.doc-frame {
+  margin-top: 16px;
+  border: 1px solid #17171712;
+  border-radius: 12px;
+}
+.doc-frame-bar {
+  display: flex;
+  gap: 0;
+  padding: 4px;
+}
+.doc-frame-bar button {
+  min-height: 36px;
+  font-size: 13px;
+  background: transparent;
+}
+.doc-frame-bar button[aria-selected='true'] {
+  background: var(--studio-active);
+}
+.doc-frame-body {
+  min-height: 363px;
+}
+@media (max-width: 760px) {
+  .doc-page {
+    padding: 24px 0;
+  }
+  .doc-usage {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Composants du Design System : mêmes sources dans le catalogue et l'iframe. */
 .ds {
   font-family: var(--font-family);

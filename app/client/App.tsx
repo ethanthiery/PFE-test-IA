@@ -7,6 +7,7 @@ import {
   Navigation,
   Scenario,
 } from './DesignSystem.js';
+import ComponentPage from './ComponentPage.js';
 import ProjectBrief from './ProjectBrief.js';
 import { useTokenDraft } from './useTokenDraft.js';
 import {
@@ -31,14 +32,22 @@ const devices = [
   { label: 'Grand · 430', width: 430 },
   { label: 'Desktop · 1024', width: 1024 },
 ];
+// Chaque composant a sa page : #/composants/<slug>.
 const components = [
-  ['comp-button', 'Button'],
-  ['comp-card', 'BookingCard'],
-  ['comp-form', 'ExampleForm'],
-  ['comp-nav', 'Navigation'],
-  ['comp-preview', 'Aperçu responsive'],
-  ['comp-agent', 'Assistant'],
-] as const;
+  { slug: 'button', label: 'Button' },
+  { slug: 'booking-card', label: 'BookingCard' },
+  { slug: 'example-form', label: 'ExampleForm' },
+  { slug: 'navigation', label: 'Navigation' },
+];
+function useHash() {
+  const [hash, setHash] = useState(location.hash);
+  useEffect(() => {
+    const update = () => setHash(location.hash);
+    addEventListener('hashchange', update);
+    return () => removeEventListener('hashchange', update);
+  }, []);
+  return hash;
+}
 // Icône au trait de 14 px, comme celles des boutons de la référence.
 const Icon = ({ d }: { d: string }) => (
   <svg
@@ -158,6 +167,18 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const controller = useRef<AbortController | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const hash = useHash();
+  const pageIndex = components.findIndex(
+    (c) => hash === `#/composants/${c.slug}`,
+  );
+  const page = components[pageIndex];
+  useEffect(() => {
+    // Retour à la galerie par une ancre (#agent-title…) : la cible n'existe qu'après le rendu.
+    if (page) document.getElementById('doc-title')?.focus();
+    else if (hash && !hash.startsWith('#/'))
+      document.getElementById(hash.slice(1))?.scrollIntoView();
+    else if (!hash) scrollTo(0, 0);
+  }, [hash, page]);
   const searchInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const focusSearch = (e: KeyboardEvent) => {
@@ -315,7 +336,7 @@ export default function App() {
             {search && 'La sélection courante reste accessible.'}
           </p>
           <nav className="sidebar-group" aria-label="Sections">
-            <a href="#ds-title" aria-current="page">
+            <a href="#ds-title" aria-current={page ? undefined : 'page'}>
               Galerie
             </a>
             <a href="#agent-title">Assistant</a>
@@ -353,9 +374,13 @@ export default function App() {
             <div className="sidebar-title">
               Composants <span>{components.length}</span>
             </div>
-            {components.map(([id, label]) => (
-              <a key={id} href={`#${id}`}>
-                {label}
+            {components.map((c) => (
+              <a
+                key={c.slug}
+                href={`#/composants/${c.slug}`}
+                aria-current={page === c ? 'page' : undefined}
+              >
+                {c.label}
               </a>
             ))}
           </div>
@@ -365,48 +390,50 @@ export default function App() {
           </div>
         </aside>
         <main className="content">
-          <header className="content-head">
-            <h1>Une source. Toutes les vues.</h1>
-            <p>
-              Explorez, proposez, validez. Construisez ensuite votre propre
-              outil.
-            </p>
-            <div className="intro-actions">
-              <button
-                className="studio-primary"
-                onClick={() => void perform(exportTokens)}
-              >
-                <Icon d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" />
-                Exporter les tokens
-              </button>
-              <label className="file-button">
-                <Icon d="M12 21V9m0 0-4 4m4-4 4 4M5 3h14" />
-                Importer un JSON
-                <input
-                  type="file"
-                  accept=".json,application/json"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    e.target.value = '';
-                    if (file)
-                      void perform(async () => {
-                        if (file.size > 128000)
-                          throw new Error(
-                            'Fichier trop volumineux (128 Ko maximum).',
+          {!page && (
+            <header className="content-head">
+              <h1>Une source. Toutes les vues.</h1>
+              <p>
+                Explorez, proposez, validez. Construisez ensuite votre propre
+                outil.
+              </p>
+              <div className="intro-actions">
+                <button
+                  className="studio-primary"
+                  onClick={() => void perform(exportTokens)}
+                >
+                  <Icon d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" />
+                  Exporter les tokens
+                </button>
+                <label className="file-button">
+                  <Icon d="M12 21V9m0 0-4 4m4-4 4 4M5 3h14" />
+                  Importer un JSON
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (file)
+                        void perform(async () => {
+                          if (file.size > 128000)
+                            throw new Error(
+                              'Fichier trop volumineux (128 Ko maximum).',
+                            );
+                          const tokens = JSON.parse(await file.text());
+                          setProposal(
+                            await request('import', {
+                              revision: state.revision,
+                              tokens,
+                            }),
                           );
-                        const tokens = JSON.parse(await file.text());
-                        setProposal(
-                          await request('import', {
-                            revision: state.revision,
-                            tokens,
-                          }),
-                        );
-                      });
-                  }}
-                />
-              </label>
-            </div>
-          </header>
+                        });
+                    }}
+                  />
+                </label>
+              </div>
+            </header>
+          )}
           <div className="feedback" aria-live="polite">
             {(error || stateError) && (
               <p className="error" role="alert">
@@ -460,193 +487,207 @@ export default function App() {
               </ol>
             </section>
           )}
-          <section className="ds-panel" aria-labelledby="ds-title">
-            <h2 id="ds-title" className="sr-only" tabIndex={-1}>
-              Design System
-            </h2>
-            {/* Chaque tuile accueille un composant : remplacez-les par les vôtres. */}
-            <div className="bento">
-              <Tile id="comp-button" label="Button" span={2}>
-                <DSProvider tokens={state.tokens}>
-                  <div className="button-row">
-                    <Button>Action principale</Button>
-                    <Button variant="secondary">Secondaire</Button>
-                    <Button variant="danger">Supprimer</Button>
-                    <Button disabled>Indisponible</Button>
-                  </div>
-                </DSProvider>
-              </Tile>
-              <Tile id="comp-card" label="BookingCard">
-                <DSProvider tokens={state.tokens}>
-                  <BookingCard />
-                </DSProvider>
-              </Tile>
-              <Tile id="comp-form" label="ExampleForm">
-                <DSProvider tokens={state.tokens}>
-                  <ExampleForm />
-                </DSProvider>
-              </Tile>
-              <Tile id="comp-nav" label="Navigation" span={2}>
-                <DSProvider tokens={state.tokens}>
-                  <Navigation />
-                </DSProvider>
-              </Tile>
-              <Tile
-                id="comp-preview"
-                label={`Aperçu responsive · ${devices[device].width} px CSS, aucun zoom`}
-                span={3}
-              >
-                <div className="tile-body">
-                  <h2 id="mobile-title" className="sr-only" tabIndex={-1}>
-                    Aperçu responsive
-                  </h2>
-                  <div className="preview-controls">
-                    <label className="field">
-                      Viewport
-                      <select
-                        value={device}
-                        onChange={(e) => setDevice(Number(e.target.value))}
-                      >
-                        {devices.map((d, i) => (
-                          <option key={d.width} value={i}>
-                            {d.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="field">
-                      Scénario
-                      <select
-                        value={scenario}
-                        onChange={(e) => setScenario(e.target.value)}
-                      >
-                        <option value="cards">Découvrir</option>
-                        <option value="form">Inscription</option>
-                      </select>
-                    </label>
-                  </div>
-                  <div className="viewport-scroll">
-                    <iframe
-                      title="Aperçu responsive"
-                      src={`/?preview=1&scenario=${scenario}`}
-                      width={devices[device].width}
-                      height={760}
-                    />
-                  </div>
-                </div>
-              </Tile>
-              <Tile
-                id="comp-agent"
-                label="Assistant · contexte PFE et tokens autorisés"
-                span={3}
-              >
-                <div className="tile-body agent-panel">
-                  <h2 id="agent-title" className="sr-only" tabIndex={-1}>
-                    Contexte et assistant
-                  </h2>
-                  <ProjectBrief />
-                  <label className="field">
-                    Mode de travail
-                    <select
-                      value={agent}
-                      onChange={(e) => setAgent(e.target.value)}
-                    >
-                      <option value="manual">Manuel · sans compte IA</option>
-                      <option value="codex">
-                        Codex · expérimental qualifié
-                      </option>
-                      <option value="claude">Claude Code · expérimental</option>
-                      <option value="gemini" disabled>
-                        Gemini CLI · non implémenté
-                      </option>
-                    </select>
-                  </label>
-                  {agent === 'manual' ? (
-                    <div className="agent-empty">
-                      <div className="line-icon">✳</div>
-                      <h3>Le Design System vous appartient.</h3>
-                      <p>
-                        Aucun compte nécessaire. Sélectionnez un token dans le
-                        panneau central, modifiez sa valeur et examinez le diff
-                        avant de l’appliquer.
-                      </p>
-                      <ol>
-                        <li>Choisissez une couleur.</li>
-                        <li>Proposez un changement.</li>
-                        <li>Validez et observez les deux vues.</li>
-                      </ol>
-                      <p className="privacy-note">
-                        Les changements restent sur votre machine. Figma et l’IA
-                        sont facultatifs.
-                      </p>
+          {page ? (
+            <ComponentPage
+              key={page.slug}
+              label={page.label}
+              prev={components[pageIndex - 1]}
+              next={components[pageIndex + 1]}
+            />
+          ) : (
+            <section className="ds-panel" aria-labelledby="ds-title">
+              <h2 id="ds-title" className="sr-only" tabIndex={-1}>
+                Design System
+              </h2>
+              {/* Chaque tuile accueille un composant : remplacez-les par les vôtres. */}
+              <div className="bento">
+                <Tile id="comp-button" label="Button" span={2}>
+                  <DSProvider tokens={state.tokens}>
+                    <div className="button-row">
+                      <Button>Action principale</Button>
+                      <Button variant="secondary">Secondaire</Button>
+                      <Button variant="danger">Supprimer</Button>
+                      <Button disabled>Indisponible</Button>
                     </div>
-                  ) : (
-                    <>
-                      <p className="privacy-note">
-                        {selectedAgent?.detail ?? 'Détection du CLI…'}
-                      </p>
-                      <p className="privacy-note">
-                        Envoi à {agentName} : tokens, workspace/PFE.md, brief
-                        privé, DESIGN_RULES.md et 10 messages récents. Aucun
-                        outil ni commande ; propositions seulement.
-                      </p>
-                      <div
-                        className="chat-log"
-                        aria-label="Conversation"
-                        aria-live="polite"
-                      >
-                        {chat.map((c, i) => (
-                          <article className={`chat-message ${c.role}`} key={i}>
-                            <strong>
-                              {c.role === 'user' ? 'Vous' : agentName}
-                            </strong>
-                            <p>{c.text}</p>
-                          </article>
-                        ))}
-                      </div>
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          void sendMessage();
-                        }}
-                      >
-                        <label className="field">
-                          Votre demande
-                          <textarea
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            maxLength={8000}
-                            placeholder="Propose une couleur de marque plus chaleureuse."
-                            disabled={thinking}
-                          />
-                        </label>
-                        <button
-                          className="studio-primary"
-                          disabled={
-                            thinking ||
-                            !message.trim() ||
-                            !selectedAgent?.available
-                          }
+                  </DSProvider>
+                </Tile>
+                <Tile id="comp-card" label="BookingCard">
+                  <DSProvider tokens={state.tokens}>
+                    <BookingCard />
+                  </DSProvider>
+                </Tile>
+                <Tile id="comp-form" label="ExampleForm">
+                  <DSProvider tokens={state.tokens}>
+                    <ExampleForm />
+                  </DSProvider>
+                </Tile>
+                <Tile id="comp-nav" label="Navigation" span={2}>
+                  <DSProvider tokens={state.tokens}>
+                    <Navigation />
+                  </DSProvider>
+                </Tile>
+                <Tile
+                  id="comp-preview"
+                  label={`Aperçu responsive · ${devices[device].width} px CSS, aucun zoom`}
+                  span={3}
+                >
+                  <div className="tile-body">
+                    <h2 id="mobile-title" className="sr-only" tabIndex={-1}>
+                      Aperçu responsive
+                    </h2>
+                    <div className="preview-controls">
+                      <label className="field">
+                        Viewport
+                        <select
+                          value={device}
+                          onChange={(e) => setDevice(Number(e.target.value))}
                         >
-                          {thinking
-                            ? 'Réflexion en cours…'
-                            : `Envoyer à ${agentName}`}
-                        </button>
-                        {thinking && (
+                          {devices.map((d, i) => (
+                            <option key={d.width} value={i}>
+                              {d.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="field">
+                        Scénario
+                        <select
+                          value={scenario}
+                          onChange={(e) => setScenario(e.target.value)}
+                        >
+                          <option value="cards">Découvrir</option>
+                          <option value="form">Inscription</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div className="viewport-scroll">
+                      <iframe
+                        title="Aperçu responsive"
+                        src={`/?preview=1&scenario=${scenario}`}
+                        width={devices[device].width}
+                        height={760}
+                      />
+                    </div>
+                  </div>
+                </Tile>
+                <Tile
+                  id="comp-agent"
+                  label="Assistant · contexte PFE et tokens autorisés"
+                  span={3}
+                >
+                  <div className="tile-body agent-panel">
+                    <h2 id="agent-title" className="sr-only" tabIndex={-1}>
+                      Contexte et assistant
+                    </h2>
+                    <ProjectBrief />
+                    <label className="field">
+                      Mode de travail
+                      <select
+                        value={agent}
+                        onChange={(e) => setAgent(e.target.value)}
+                      >
+                        <option value="manual">Manuel · sans compte IA</option>
+                        <option value="codex">
+                          Codex · expérimental qualifié
+                        </option>
+                        <option value="claude">
+                          Claude Code · expérimental
+                        </option>
+                        <option value="gemini" disabled>
+                          Gemini CLI · non implémenté
+                        </option>
+                      </select>
+                    </label>
+                    {agent === 'manual' ? (
+                      <div className="agent-empty">
+                        <div className="line-icon">✳</div>
+                        <h3>Le Design System vous appartient.</h3>
+                        <p>
+                          Aucun compte nécessaire. Sélectionnez un token dans le
+                          panneau central, modifiez sa valeur et examinez le
+                          diff avant de l’appliquer.
+                        </p>
+                        <ol>
+                          <li>Choisissez une couleur.</li>
+                          <li>Proposez un changement.</li>
+                          <li>Validez et observez les deux vues.</li>
+                        </ol>
+                        <p className="privacy-note">
+                          Les changements restent sur votre machine. Figma et
+                          l’IA sont facultatifs.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="privacy-note">
+                          {selectedAgent?.detail ?? 'Détection du CLI…'}
+                        </p>
+                        <p className="privacy-note">
+                          Envoi à {agentName} : tokens, workspace/PFE.md, brief
+                          privé, DESIGN_RULES.md et 10 messages récents. Aucun
+                          outil ni commande ; propositions seulement.
+                        </p>
+                        <div
+                          className="chat-log"
+                          aria-label="Conversation"
+                          aria-live="polite"
+                        >
+                          {chat.map((c, i) => (
+                            <article
+                              className={`chat-message ${c.role}`}
+                              key={i}
+                            >
+                              <strong>
+                                {c.role === 'user' ? 'Vous' : agentName}
+                              </strong>
+                              <p>{c.text}</p>
+                            </article>
+                          ))}
+                        </div>
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            void sendMessage();
+                          }}
+                        >
+                          <label className="field">
+                            Votre demande
+                            <textarea
+                              value={message}
+                              onChange={(e) => setMessage(e.target.value)}
+                              maxLength={8000}
+                              placeholder="Propose une couleur de marque plus chaleureuse."
+                              disabled={thinking}
+                            />
+                          </label>
                           <button
-                            type="button"
-                            onClick={() => controller.current?.abort()}
+                            className="studio-primary"
+                            disabled={
+                              thinking ||
+                              !message.trim() ||
+                              !selectedAgent?.available
+                            }
                           >
-                            Arrêter
+                            {thinking
+                              ? 'Réflexion en cours…'
+                              : `Envoyer à ${agentName}`}
                           </button>
-                        )}
-                      </form>
-                    </>
-                  )}
-                </div>
-              </Tile>
-            </div>
-          </section>
+                          {thinking && (
+                            <button
+                              type="button"
+                              onClick={() => controller.current?.abort()}
+                            >
+                              Arrêter
+                            </button>
+                          )}
+                        </form>
+                      </>
+                    )}
+                  </div>
+                </Tile>
+              </div>
+            </section>
+          )}
         </main>
         <aside className="customizer" aria-label="Personnaliser les tokens">
           <div className="editor-title">
