@@ -143,6 +143,16 @@ function announceChange() {
   c.postMessage('updated');
   c.close();
 }
+const CloseButton = ({ onClick }: { onClick: () => void }) => (
+  <button
+    type="button"
+    className="feedback-close"
+    aria-label="Fermer le message"
+    onClick={onClick}
+  >
+    <Icon d="M18 6 6 18M6 6l12 12" />
+  </button>
+);
 export function Preview() {
   const { state, error } = useDesignState();
   const scenario =
@@ -450,11 +460,14 @@ export default function App() {
             {(error || stateError) && (
               <p className="error" role="alert">
                 {error || stateError}
+                {/* L'erreur de connexion revient seule tant que le serveur ne répond pas. */}
+                {error && <CloseButton onClick={clearError} />}
               </p>
             )}
             {notice && (
               <p className="notice" role="status">
                 {notice}
+                <CloseButton onClick={clearError} />
               </p>
             )}
           </div>

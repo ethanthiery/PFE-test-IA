@@ -175,8 +175,31 @@ small,
   margin: 0 28px;
 }
 .feedback p {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px 14px;
   border-radius: 8px;
+}
+.feedback-close {
+  display: grid;
+  place-items: center;
+  margin: -4px -6px -4px auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  transition:
+    opacity 0.08s var(--ease-quick),
+    background-color 0.08s var(--ease-quick);
+}
+.feedback-close:hover {
+  opacity: 1;
+  background: #0000000a;
 }
 .error {
   color: #9f1730;
