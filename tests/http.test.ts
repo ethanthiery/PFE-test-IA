@@ -240,3 +240,22 @@ test('mode manuel disponible immédiatement même si la détection IA ne répond
   assert.equal(response.status, 200);
   assert.equal(typeof (await response.json()).csrf, 'string');
 });
+test('inspiration : adresses locales et privées refusées sans proposition', async (t) => {
+  const { post, store } = await fixture(t);
+  for (const url of [
+    'http://127.0.0.1:4310/',
+    'http://localhost/',
+    'http://192.168.1.10/',
+    'http://[::1]/',
+    'file:///etc/passwd',
+    'https://www.figma.com/design/abc',
+  ]) {
+    const res = await post('inspiration', {
+      revision: 0,
+      url,
+      scopes: ['colors'],
+    });
+    assert.equal(res.status, 400, url);
+  }
+  assert.equal(store.snapshot().revision, 0);
+});

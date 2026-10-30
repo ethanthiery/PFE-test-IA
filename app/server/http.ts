@@ -12,6 +12,16 @@ import { ClaudeAdapter } from '../../connectors/agents/claude.js';
 import { unvalidatedAdapter } from '../../connectors/agents/unvalidated.js';
 import type { AgentAdapter } from '../../connectors/agents/types.js';
 import { figmaStatus } from '../../connectors/figma/contract.js';
+import {
+  analyzeCss,
+  inspire,
+  scopes,
+  summarize,
+} from '../../connectors/inspiration/analyze.js';
+import {
+  fetchSiteCss,
+  InspirationError,
+} from '../../connectors/inspiration/fetch.js';
 import type { RecordInfo } from '../../scripts/runtime.mjs';
 
 export async function createStudioServer(options: {
@@ -172,6 +182,50 @@ export async function createStudioServer(options: {
         if (url.pathname === '/api/commit') {
           const b = z.object({ id: z.string().uuid() }).strict().parse(body);
           return send(200, await store.commit(b.id));
+        }
+        if (url.pathname === '/api/inspiration') {
+          const b = z
+            .object({
+              revision: z.number().int().nonnegative(),
+              url: z.string().trim().min(1).max(2000),
+              scopes: z.array(z.enum(scopes)).min(1).max(scopes.length),
+            })
+            .strict()
+            .parse(body);
+          if (b.revision !== store.snapshot().revision)
+            throw new StudioError(
+              'DS modifié depuis votre dernier affichage. Réessayez.',
+              409,
+            );
+          const controller = new AbortController();
+          active.add(controller);
+          const cancel = () => controller.abort();
+          res.once('close', cancel);
+          try {
+            const site = await fetchSiteCss(
+              b.url,
+              AbortSignal.any([controller.signal, AbortSignal.timeout(12_000)]),
+            ).catch((e: Error) => {
+              throw new StudioError(
+                e instanceof InspirationError
+                  ? e.message
+                  : 'Site injoignable ou trop lent (12 s maximum).',
+              );
+            });
+            const stats = analyzeCss(site.css);
+            const changes = inspire(stats, store.snapshot().tokens, b.scopes);
+            return send(200, {
+              host: site.host,
+              sheets: site.sheets,
+              summary: summarize(stats),
+              proposal: changes.length
+                ? store.propose(b.revision, changes, 'inspiration')
+                : null,
+            });
+          } finally {
+            active.delete(controller);
+            res.off('close', cancel);
+          }
         }
         if (url.pathname === '/api/agent') {
           const b = z

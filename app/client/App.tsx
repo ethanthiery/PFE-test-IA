@@ -3,6 +3,8 @@ import { Scenario } from './DesignSystem.js';
 import {
   ComponentPage,
   ExperiencePage,
+  InspirationPage,
+  type InspirationResult,
   FoundationPage,
   Icon,
   IntroPage,
@@ -81,6 +83,7 @@ const foundations: {
 // Ordre de lecture du site, pour les flèches précédent / suivant.
 const pages: Page[] = [
   { href: '#/atelier/assistant', label: 'Assistant' },
+  { href: '#/atelier/inspiration', label: 'Inspiration' },
   { href: '#/', label: 'Vitrine' },
   { href: '#/introduction', label: 'Introduction' },
   { href: '#/journal', label: 'Journal des versions' },
@@ -103,6 +106,54 @@ function useHash() {
   }, []);
   return hash;
 }
+// Points bleus du menu : la dernière révision vue sur chaque page, dans ce navigateur.
+// Facultatif : sans stockage, tout est considéré comme vu au chargement.
+const seenKey = 'ds-studio-seen-v1';
+type Seen = { base?: number; pages: Record<string, number> };
+function useSeen(route: string, state?: State) {
+  const [seen, setSeen] = useState<Seen>(() => {
+    try {
+      return (
+        JSON.parse(localStorage.getItem(seenKey) || 'null') ?? { pages: {} }
+      );
+    } catch {
+      return { pages: {} };
+    }
+  });
+  const revision = state?.revision;
+  useEffect(() => {
+    if (revision === undefined) return;
+    setSeen((prev) => {
+      if (prev.pages[route] === revision && prev.base !== undefined)
+        return prev;
+      const next = {
+        base: prev.base ?? revision,
+        pages: { ...prev.pages, [route]: revision },
+      };
+      try {
+        localStorage.setItem(seenKey, JSON.stringify(next));
+      } catch {
+        /* Facultatif. */
+      }
+      return next;
+    });
+  }, [route, revision]);
+  // Vrai si une révision non vue touche cette page (tous les tokens sans préfixe).
+  return (href: string, prefix = '') =>
+    !!state &&
+    state.history.some(
+      (h) =>
+        h.revision > (seen.pages[href] ?? seen.base ?? state.revision) &&
+        h.patches.some((p) => p.key.startsWith(prefix)),
+    );
+}
+const NewDot = () => (
+  <span
+    className="new-dot"
+    role="img"
+    aria-label="modifié depuis votre visite"
+  />
+);
 function useDesignState() {
   const [state, setState] = useState<State>();
   const [error, setError] = useState('');
@@ -204,6 +255,7 @@ export default function App() {
   const route = pages[pageIndex] ? hash : '#/';
   const prev = pages[pageIndex - 1];
   const next = pages[pageIndex + 1];
+  const unseen = useSeen(route, state);
   useEffect(() => {
     scrollTo(0, 0);
     if (route !== '#/') document.getElementById('doc-title')?.focus();
@@ -373,7 +425,7 @@ export default function App() {
           </p>
           <nav aria-label="Design system">
             <div className="sidebar-title">
-              Atelier <span>1</span>
+              Atelier <span>2</span>
             </div>
             <FluidList className="sidebar-group">
               <a
@@ -384,6 +436,15 @@ export default function App() {
                 }
               >
                 Assistant
+              </a>
+              <a
+                href="#/atelier/inspiration"
+                data-fluid
+                aria-current={
+                  route === '#/atelier/inspiration' ? 'page' : undefined
+                }
+              >
+                Inspiration
               </a>
             </FluidList>
             <FluidList className="sidebar-group">
@@ -407,7 +468,7 @@ export default function App() {
                 aria-current={route === '#/journal' ? 'page' : undefined}
               >
                 Journal des versions
-                {state.history.length > 0 && <span className="new-dot" />}
+                {unseen('#/journal') && <NewDot />}
               </a>
             </FluidList>
             <div className="sidebar-title">
@@ -424,6 +485,7 @@ export default function App() {
                   }
                 >
                   {f.label}
+                  {unseen(`#/fondations/${f.slug}`, f.prefix) && <NewDot />}
                 </a>
               ))}
               <a
@@ -571,6 +633,26 @@ export default function App() {
                   next={next}
                 />
               ),
+          )}
+          {route === '#/atelier/inspiration' && (
+            <InspirationPage
+              prev={prev}
+              next={next}
+              onAnalyze={async (url, scopes) => {
+                clearError();
+                try {
+                  const result = await request<InspirationResult>(
+                    'inspiration',
+                    { revision: state.revision, url, scopes },
+                  );
+                  if (result.proposal) setProposal(result.proposal as Proposal);
+                  return result;
+                } catch (e) {
+                  setError((e as Error).message);
+                  throw e;
+                }
+              }}
+            />
           )}
           {route === '#/fondations/experience' && (
             <ExperiencePage experience={experience} prev={prev} next={next} />

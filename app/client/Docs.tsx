@@ -460,3 +460,146 @@ function PreviewFrame() {
     </div>
   );
 }
+
+export interface InspirationResult {
+  host: string;
+  sheets: number;
+  summary: {
+    colors: string[];
+    families: string[];
+    sizes: number[];
+    spacing: number[];
+    radius: number[];
+  };
+  proposal: unknown;
+}
+const inspirationScopes = [
+  { id: 'colors', label: 'Couleurs' },
+  { id: 'typography', label: 'Typographie' },
+  { id: 'spacing', label: 'Espacements' },
+  { id: 'radius', label: 'Rayons' },
+] as const;
+
+// Inspiration : lire les styles publics d'un site et proposer d'y aligner le DS.
+export function InspirationPage({
+  onAnalyze,
+  prev,
+  next,
+}: {
+  onAnalyze: (url: string, scopes: string[]) => Promise<InspirationResult>;
+  prev?: Page;
+  next?: Page;
+}) {
+  const [url, setUrl] = useState('');
+  const [scopes, setScopes] = useState<string[]>(
+    inspirationScopes.map((s) => s.id),
+  );
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<InspirationResult>();
+  async function analyze() {
+    setBusy(true);
+    try {
+      setResult(await onAnalyze(url, scopes));
+    } finally {
+      setBusy(false);
+    }
+  }
+  const chips = (label: string, values: (string | number)[], unit = '') =>
+    values.length > 0 && (
+      <div className="inspiration-row">
+        <span>{label}</span>
+        <div>
+          {values.map((v) => (
+            <code key={v}>
+              {v}
+              {unit}
+            </code>
+          ))}
+        </div>
+      </div>
+    );
+  return (
+    <article className="doc-page">
+      <PageHead
+        title="Inspiration"
+        lead="Collez le lien d’un site ou d’un design system que vous aimez. DS-Studio télécharge ses styles publics depuis votre Mac et propose d’y aligner vos tokens. Rien n’est appliqué sans votre validation."
+        prev={prev}
+        next={next}
+      />
+      <form
+        className="inspiration-form doc-section"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void analyze();
+        }}
+      >
+        <label className="field">
+          Lien du site
+          <input
+            type="url"
+            required
+            placeholder="https://linear.app"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+        </label>
+        <fieldset>
+          <legend>À reprendre</legend>
+          {inspirationScopes.map((s) => (
+            <label key={s.id}>
+              <input
+                type="checkbox"
+                checked={scopes.includes(s.id)}
+                onChange={(e) =>
+                  setScopes((all) =>
+                    e.target.checked
+                      ? [...all, s.id]
+                      : all.filter((x) => x !== s.id),
+                  )
+                }
+              />
+              {s.label}
+            </label>
+          ))}
+        </fieldset>
+        <button
+          className="studio-primary"
+          disabled={busy || !scopes.length || !url.trim()}
+        >
+          {busy ? 'Analyse en cours…' : 'Analyser et proposer'}
+        </button>
+      </form>
+      {result && (
+        <section className="doc-section" aria-live="polite">
+          <h2>Trouvé sur {result.host}</h2>
+          <p>
+            {result.sheets} feuille(s) de style lue(s).{' '}
+            {result.proposal
+              ? 'Une proposition vous a été présentée. Relancez l’analyse pour la revoir.'
+              : 'Aucun changement à proposer pour ces familles.'}
+          </p>
+          {result.summary.colors.length > 0 && (
+            <div className="inspiration-row">
+              <span>Couleurs</span>
+              <div>
+                {result.summary.colors.map((c) => (
+                  <span
+                    key={c}
+                    className="inspiration-swatch"
+                    style={{ background: c }}
+                    title={c}
+                    aria-label={c}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          {chips('Polices', result.summary.families)}
+          {chips('Tailles', result.summary.sizes, ' px')}
+          {chips('Espacements', result.summary.spacing, ' px')}
+          {chips('Rayons', result.summary.radius, ' px')}
+        </section>
+      )}
+    </article>
+  );
+}

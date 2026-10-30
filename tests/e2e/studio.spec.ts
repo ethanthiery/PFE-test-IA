@@ -357,3 +357,31 @@ test('fondations : copier le code Swift ou CSS d’un token', async ({
     'var(--radius-control)',
   );
 });
+
+test('points bleus : seulement les pages modifiées depuis la dernière visite', async ({
+  page,
+}) => {
+  await page.goto('/#/fondations/rayons');
+  const nav = page.getByRole('navigation', { name: 'Design system' });
+  const dot = (name: string) =>
+    nav.getByRole('link', { name }).getByRole('img');
+  await expect(dot('Journal des versions')).toHaveCount(0);
+  await page
+    .getByRole('combobox', { name: 'Token', exact: true })
+    .selectOption('color.focus');
+  await page.getByLabel('Valeur du token').fill('#225588');
+  await page.getByRole('button', { name: 'Proposer', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Valider et enregistrer' })
+    .click();
+  await expect(dot('Journal des versions')).toHaveCount(1);
+  await expect(dot('Couleurs')).toHaveCount(1);
+  await expect(dot('Rayons')).toHaveCount(0);
+  await page.goto('/#/fondations/couleurs');
+  await expect(dot('Couleurs')).toHaveCount(0);
+  await expect(dot('Journal des versions')).toHaveCount(1);
+  await page.reload();
+  await expect(dot('Couleurs')).toHaveCount(0);
+  await expect(dot('Journal des versions')).toHaveCount(1);
+});
