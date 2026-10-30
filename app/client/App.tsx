@@ -1,12 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  BookingCard,
-  Button,
-  DSProvider,
-  ExampleForm,
-  Navigation,
-  Scenario,
-} from './DesignSystem.js';
+import { Scenario } from './DesignSystem.js';
 import {
   ComponentPage,
   FoundationPage,
@@ -36,12 +29,6 @@ import {
   type TokenKey,
 } from '../shared/model.js';
 
-const devices = [
-  { label: 'Compact · 320', width: 320 },
-  { label: 'Standard · 375', width: 375 },
-  { label: 'Grand · 430', width: 430 },
-  { label: 'Desktop · 1024', width: 1024 },
-];
 // Composants Mainline à venir : chaque nom a sa tuile et sa page, vides pour l'instant.
 // Renommez, ajoutez ou retirez des entrées ici.
 const components: { slug: string; label: string; span: 1 | 2 }[] = [
@@ -91,6 +78,7 @@ const foundations: {
 ];
 // Ordre de lecture du site, pour les flèches précédent / suivant.
 const pages: Page[] = [
+  { href: '#/atelier/assistant', label: 'Assistant' },
   { href: '#/', label: 'Vitrine' },
   { href: '#/introduction', label: 'Introduction' },
   { href: '#/journal', label: 'Journal des versions' },
@@ -102,8 +90,6 @@ const pages: Page[] = [
     href: `#/composants/${c.slug}`,
     label: c.label,
   })),
-  { href: '#/atelier/apercu', label: 'Aperçu des tokens' },
-  { href: '#/atelier/assistant', label: 'Assistant' },
 ];
 function useHash() {
   const [hash, setHash] = useState(location.hash || '#/');
@@ -187,8 +173,6 @@ export default function App() {
   const [proposal, setProposal] = useState<Proposal>();
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [device, setDevice] = useState(1);
-  const [scenario, setScenario] = useState('cards');
   const [agent, setAgent] = useState('manual');
   const [message, setMessage] = useState('');
   const [chat, setChat] = useState<
@@ -371,6 +355,20 @@ export default function App() {
             {search && 'La sélection courante reste accessible.'}
           </p>
           <nav aria-label="Design system">
+            <div className="sidebar-title">
+              Atelier <span>1</span>
+            </div>
+            <FluidList className="sidebar-group">
+              <a
+                href="#/atelier/assistant"
+                data-fluid
+                aria-current={
+                  route === '#/atelier/assistant' ? 'page' : undefined
+                }
+              >
+                Assistant
+              </a>
+            </FluidList>
             <FluidList className="sidebar-group">
               <a
                 href="#/"
@@ -429,27 +427,6 @@ export default function App() {
                 </a>
               ))}
             </FluidList>
-            <div className="sidebar-title">
-              Atelier <span>2</span>
-            </div>
-            <FluidList className="sidebar-group">
-              <a
-                href="#/atelier/apercu"
-                data-fluid
-                aria-current={route === '#/atelier/apercu' ? 'page' : undefined}
-              >
-                Aperçu des tokens
-              </a>
-              <a
-                href="#/atelier/assistant"
-                data-fluid
-                aria-current={
-                  route === '#/atelier/assistant' ? 'page' : undefined
-                }
-              >
-                Assistant
-              </a>
-            </FluidList>
           </nav>
           <div className="sidebar-foot">
             <span className="local-badge">● Local · V2</span>
@@ -475,9 +452,12 @@ export default function App() {
                 <div className="doc-head-row">
                   <h1>Mainline</h1>
                   <nav className="doc-arrows" aria-label="Pages voisines">
-                    <span aria-hidden="true">
+                    <a
+                      href="#/atelier/assistant"
+                      aria-label="Précédent : Assistant"
+                    >
                       <Icon d="M19 12H5m0 0 6-6m-6 6 6 6" size={16} />
-                    </span>
+                    </a>
                     <a
                       href="#/introduction"
                       aria-label="Suivant : Introduction"
@@ -573,74 +553,6 @@ export default function App() {
                   next={next}
                 />
               ),
-          )}
-          {route === '#/atelier/apercu' && (
-            <article className="doc-page doc-page-wide">
-              <PageHead
-                title="Aperçu des tokens"
-                lead="Vos tokens appliqués aux composants d’exemple Lisière, ici et dans un écran réel. Ils seront remplacés par ceux de Mainline."
-                prev={prev}
-                next={next}
-              />
-              <section
-                className="ds-panel doc-section"
-                aria-labelledby="ds-catalogue"
-              >
-                <h2 id="ds-catalogue">Design System</h2>
-                <DSProvider tokens={state.tokens}>
-                  <div className="catalogue-grid">
-                    <div className="button-row">
-                      <Button>Action principale</Button>
-                      <Button variant="secondary">Secondaire</Button>
-                      <Button variant="danger">Supprimer</Button>
-                      <Button disabled>Indisponible</Button>
-                    </div>
-                    <BookingCard />
-                    <ExampleForm />
-                    <Navigation />
-                  </div>
-                </DSProvider>
-              </section>
-              <section className="doc-section">
-                <h2 id="mobile-title">Aperçu responsive</h2>
-                <p>{devices[device].width} px CSS · aucun zoom appliqué</p>
-                <div className="tile-body">
-                  <div className="preview-controls">
-                    <label className="field">
-                      Viewport
-                      <select
-                        value={device}
-                        onChange={(e) => setDevice(Number(e.target.value))}
-                      >
-                        {devices.map((d, i) => (
-                          <option key={d.width} value={i}>
-                            {d.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="field">
-                      Scénario
-                      <select
-                        value={scenario}
-                        onChange={(e) => setScenario(e.target.value)}
-                      >
-                        <option value="cards">Découvrir</option>
-                        <option value="form">Inscription</option>
-                      </select>
-                    </label>
-                  </div>
-                  <div className="viewport-scroll">
-                    <iframe
-                      title="Aperçu responsive"
-                      src={`/?preview=1&scenario=${scenario}`}
-                      width={devices[device].width}
-                      height={760}
-                    />
-                  </div>
-                </div>
-              </section>
-            </article>
           )}
           {route === '#/atelier/assistant' && (
             <article className="doc-page">
