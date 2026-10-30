@@ -1,123 +1,105 @@
 import { test, expect } from '@playwright/test';
 
+// Les composants d'exemple ne sont plus affichés dans le site : on vérifie la
+// propagation des tokens dans l'écran témoin (/?preview=1), ouvert à côté.
 test('boucle centrale réelle : diff, validation, propagation, recharge, annulation sélective', async ({
   page,
+  context,
 }) => {
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { name: 'Une source. Toutes les vues.' }),
+    page.getByRole('heading', { name: 'Mainline', exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText('Figma non connecté', { exact: true }),
   ).toBeVisible();
-  const catalogue = page.locator('.ds-panel');
-  const mobile = page.frameLocator('iframe');
-  const mainButton = catalogue.getByRole('button', {
-    name: 'Action principale',
+  const mobile = await context.newPage();
+  await mobile.goto('/?preview=1');
+  const book = mobile.getByRole('button', {
+    name: 'Réserver une place',
     exact: true,
   });
-  await expect(mainButton).toHaveCSS('background-color', 'rgb(49, 84, 196)');
+  await expect(book).toHaveCSS('background-color', 'rgb(49, 84, 196)');
   await page.getByLabel('Valeur du token').fill('#8A3B20');
   await page.getByRole('button', { name: 'Proposer', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('#3154C4');
   await expect(dialog).toContainText('#8A3B20');
-  await expect(mainButton).toHaveCSS('background-color', 'rgb(49, 84, 196)');
   await dialog.getByRole('button', { name: 'Ne pas appliquer' }).click();
-  await expect(mainButton).toHaveCSS('background-color', 'rgb(49, 84, 196)');
+  await expect(book).toHaveCSS('background-color', 'rgb(49, 84, 196)');
   await page.getByRole('button', { name: 'Proposer', exact: true }).click();
   await dialog.getByRole('button', { name: 'Valider et enregistrer' }).click();
-  await expect(mainButton).toHaveCSS('background-color', 'rgb(138, 59, 32)');
-  await expect(
-    catalogue.getByRole('button', { name: 'Réserver une place', exact: true }),
-  ).toHaveCSS('background-color', 'rgb(138, 59, 32)');
-  await expect(
-    mobile.getByRole('button', { name: 'Réserver une place', exact: true }),
-  ).toHaveCSS('background-color', 'rgb(138, 59, 32)');
+  await expect(book).toHaveCSS('background-color', 'rgb(138, 59, 32)');
   await expect(
     mobile.getByRole('button', { name: 'Découvrir', exact: true }),
   ).toHaveCSS('background-color', 'rgb(138, 59, 32)');
+  await page.goto('/#/fondations/couleurs');
   await page.reload();
-  await expect(mainButton).toHaveCSS('background-color', 'rgb(138, 59, 32)');
+  await expect(
+    page.getByRole('listitem', {
+      name: 'Sélectionner color.brand',
+      exact: true,
+    }),
+  ).toContainText('#8A3B20');
   await page
     .getByRole('combobox', { name: 'Token', exact: true })
     .selectOption('space.md');
   await page.getByLabel('Valeur du token').fill('22');
   await page.getByRole('button', { name: 'Proposer', exact: true }).click();
   await dialog.getByRole('button', { name: 'Valider et enregistrer' }).click();
-  await page.getByRole('button', { name: /Historique/ }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.goto('/#/journal');
   await page
     .getByRole('button', { name: 'Annuler la révision 1', exact: true })
     .click();
   await dialog.getByRole('button', { name: 'Valider et enregistrer' }).click();
-  await expect(mainButton).toHaveCSS('background-color', 'rgb(49, 84, 196)');
-  await expect(mainButton).toHaveCSS('padding-left', '22px');
-  await expect(
-    mobile.getByRole('button', { name: 'Réserver une place', exact: true }),
-  ).toHaveCSS('background-color', 'rgb(49, 84, 196)');
+  await expect(book).toHaveCSS('background-color', 'rgb(49, 84, 196)');
+  await expect(book).toHaveCSS('padding-left', '22px');
   await page.screenshot({ path: 'test-results/studio.png', fullPage: true });
+  await mobile.close();
 });
 
-test('largeurs réelles, interactions, formulaire et desktop responsive', async ({
+test('écran témoin : largeurs réelles, interactions, formulaire et desktop responsive', async ({
   page,
 }) => {
-  await page.goto('/');
-  const frame = page.frameLocator('iframe');
-  for (const [value, width] of [
-    ['0', 320],
-    ['1', 375],
-    ['2', 430],
-    ['3', 1024],
-  ] as const) {
-    await page
-      .getByRole('combobox', { name: 'Viewport', exact: true })
-      .selectOption(value);
-    await expect(page.locator('iframe')).toHaveAttribute(
-      'width',
-      String(width),
-    );
-    await expect
-      .poll(() =>
-        page
-          .locator('iframe')
-          .evaluate((f: HTMLIFrameElement) => f.contentWindow?.innerWidth),
-      )
-      .toBe(width);
+  for (const width of [320, 375, 430, 1024]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/?preview=1');
+    await page.locator('.scenario-grid').waitFor();
     expect(
-      await frame
+      await page
         .locator('body')
         .evaluate((el) => el.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    const columns = await frame
+    const columns = await page
       .locator('.scenario-grid')
       .evaluate(
         (el) => getComputedStyle(el).gridTemplateColumns.split(' ').length,
       );
     expect(columns).toBe(width >= 700 ? 2 : 1);
   }
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/?preview=1');
   await page
-    .getByRole('combobox', { name: 'Viewport', exact: true })
-    .selectOption('1');
-  await frame
     .getByRole('button', { name: 'Réserver une place', exact: true })
     .click();
   await expect(
-    frame.getByRole('button', { name: 'Réservation confirmée ✓' }),
+    page.getByRole('button', { name: 'Réservation confirmée ✓' }),
   ).toBeVisible();
-  await frame.getByRole('button', { name: 'Favoris', exact: true }).click();
+  await page.getByRole('button', { name: 'Favoris', exact: true }).click();
   await expect(
-    frame.getByText('Vos ateliers favoris apparaîtront ici.'),
+    page.getByText('Vos ateliers favoris apparaîtront ici.'),
   ).toBeVisible();
-  await page
-    .getByRole('combobox', { name: 'Scénario', exact: true })
-    .selectOption('form');
-  await frame.getByLabel('Votre prénom').fill('Camille');
-  await frame.getByLabel('Adresse e-mail').fill('camille@example.com');
-  await frame.getByRole('checkbox').check();
-  await frame.getByRole('button', { name: 'S’inscrire', exact: true }).click();
-  await expect(frame.getByText(/Merci ! Démonstration locale/)).toBeVisible();
+  await page.goto('/?preview=1&scenario=form');
+  await page.getByLabel('Votre prénom').fill('Camille');
+  await page.getByLabel('Adresse e-mail').fill('camille@example.com');
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'S’inscrire', exact: true }).click();
+  await expect(page.getByText(/Merci ! Démonstration locale/)).toBeVisible();
   await page.setViewportSize({ width: 700, height: 900 });
+  await page.goto('/');
+  await page.getByRole('heading', { name: 'Tokens sémantiques' }).waitFor();
   expect(
     await page
       .locator('body')
@@ -204,7 +186,7 @@ test('V2 : contraste proposé immédiat sans modifier les composants enregistré
 test('V2 : brief privé persistant, indépendant du mode IA', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/#/atelier/assistant');
   await page.getByText('Mon PFE · brief privé', { exact: true }).click();
   await page
     .getByLabel('Nom du PFE', { exact: true })
@@ -342,9 +324,7 @@ test('V2 : clavier, mobile 375 px et absence de stockage navigateur', async ({
     page.getByRole('link', { name: 'Aller aux tokens' }),
   ).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(
-    page.getByRole('heading', { name: 'Design System', exact: true }),
-  ).toBeFocused();
+  await expect(page.locator('#tokens-panel')).toBeFocused();
   await page.getByLabel('Valeur du token').fill('#114477');
   await page.getByRole('button', { name: 'Proposer', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();

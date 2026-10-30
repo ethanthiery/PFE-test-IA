@@ -119,7 +119,7 @@ try {
       const page = await browser.newPage({
         viewport: { width: 1600, height: 1000 },
       });
-      await page.goto(origin);
+      await page.goto(origin + '/#/atelier/assistant');
       await page
         .getByRole('combobox', { name: 'Mode de travail', exact: true })
         .selectOption('codex');
@@ -145,29 +145,20 @@ try {
       await dialog.waitFor({ state: 'hidden' });
       const updated = await (await fetch(origin + '/api/state')).json();
       assert.equal(updated.tokens['color.brand'].$value, '#8A3B20');
-      const button = page
-        .locator('.ds-panel')
-        .getByRole('button', { name: 'Action principale', exact: true });
-      await expect(button).toHaveCSS('background-color', 'rgb(138, 59, 32)');
-      const mobile = page
-        .frameLocator('iframe')
-        .getByRole('button', { name: 'Réserver une place', exact: true });
-      await page.waitForFunction(() => {
-        const f = document.querySelector('iframe');
-        const b = f?.contentDocument?.querySelector('.ds-button.primary');
-        return (
-          !!b &&
-          f.contentWindow.getComputedStyle(b).backgroundColor ===
-            'rgb(138, 59, 32)'
-        );
+      // Les composants ne sont visibles que dans l'écran témoin.
+      const mobile = await page.context().newPage();
+      await mobile.goto(origin + '/?preview=1');
+      const book = mobile.getByRole('button', {
+        name: 'Réserver une place',
+        exact: true,
       });
-      await mobile.click();
-      await page
-        .frameLocator('iframe')
+      await expect(book).toHaveCSS('background-color', 'rgb(138, 59, 32)');
+      await book.click();
+      await mobile
         .getByRole('button', { name: 'Réservation confirmée ✓' })
         .waitFor();
       console.log(
-        'PASS: vrai chat Codex dans Chromium → API → diff sans commit → acceptation explicite → CSS catalogue/mobile et interaction.',
+        'PASS: vrai chat Codex dans Chromium → API → diff sans commit → acceptation explicite → CSS de l’écran témoin et interaction.',
       );
     } finally {
       await browser.close();

@@ -1,4 +1,48 @@
-# DS-Studio V2
+# Mainline · Design System
+
+Le design system de **Mainline : Focus Journey**, une app iPhone (SwiftUI) de
+concentration où chaque session de travail devient un trajet en train. Projet de
+fin d’études d’Ethan Thiery (M2). La plupart des composants de l’app s’appuieront
+sur Liquid Glass d’Apple ; ce site en documente les tokens et les composants.
+
+- **Le projet** : [workspace/PFE.md](workspace/PFE.md)
+- **Les règles de design** : [workspace/DESIGN_RULES.md](workspace/DESIGN_RULES.md)
+- **Les décisions sur les tokens** : [workspace/DECISIONS.md](workspace/DECISIONS.md)
+- **Les tokens exportés** : [workspace/mainline.tokens.json](workspace/mainline.tokens.json)
+
+## Lancer le site en local
+
+```bash
+npm install
+npm start
+```
+
+Puis ouvrir http://127.0.0.1:4310. Le site tourne uniquement sur votre machine.
+
+| Page                 | Contenu                                                 |
+| -------------------- | ------------------------------------------------------- |
+| Atelier · Assistant  | Demander une proposition de tokens à Claude ou Codex    |
+| Vitrine              | Une tuile par composant Mainline                        |
+| Introduction         | Les principes qui guident les composants                |
+| Journal des versions | Chaque changement de token validé, annulable            |
+| Fondations           | Couleurs, typographie, espacements, rayons              |
+| Composants           | Une page par composant, vide tant qu’il n’est pas conçu |
+
+Le panneau de droite permet de proposer une nouvelle valeur de token. Rien n’est
+enregistré sans validation dans la fenêtre de comparaison.
+
+## État actuel
+
+- Seuls `color.brand` et `color.brandHover` viennent de Mainline ; les autres
+  tokens sont ceux du starter, en attendant les variables Figma.
+- Les pages de composants sont des emplacements vides.
+- Figma n’est pas connecté à l’app (voir [docs/FIGMA.md](docs/FIGMA.md)).
+
+---
+
+Ce site est construit sur le starter **DS-Studio V2**, documenté ci-dessous.
+
+## Le starter DS-Studio V2
 
 Un atelier **web local** pour explorer, modifier et faire évoluer un Design System.
 Ce starter pédagogique est conçu pour devenir **votre outil**, pas pour dicter vos
