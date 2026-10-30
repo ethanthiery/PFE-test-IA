@@ -998,7 +998,14 @@ a.tile:hover .tile-caption {
   display: flex;
   flex-direction: column;
 }
-.token-table button {
+.token-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.token-table [data-fluid] {
+  flex: 1;
+  min-width: 0;
   display: grid;
   grid-template-columns: 40px 1fr auto;
   align-items: center;
@@ -1009,8 +1016,42 @@ a.tile:hover .tile-caption {
   font-size: 13px;
   text-align: left;
 }
-.token-table button:hover {
+.token-table [data-fluid]:hover {
   background: transparent;
+}
+.token-copy {
+  flex: none;
+  width: 190px;
+  max-width: 45%;
+  text-align: left;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--studio-line);
+  border-radius: 6px;
+  background: var(--studio-canvas);
+  color: var(--studio-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition:
+    color 0.08s var(--ease-quick),
+    border-color 0.08s var(--ease-quick);
+}
+.token-copy:hover {
+  color: var(--studio-ink);
+  border-color: var(--studio-ink);
+}
+.token-copy code {
+  font-size: 12px;
+}
+.token-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: var(--studio-muted);
+  font-size: 13px;
 }
 .token-preview {
   display: grid;
@@ -1449,4 +1490,11 @@ a.tile:hover .tile-caption {
 }
 h2[id] {
   scroll-margin-top: 16px;
+}
+.check-ds {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin: 4px 0 12px;
 }

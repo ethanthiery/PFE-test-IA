@@ -21,6 +21,6 @@ extension MainlineTheme {
         spaceSm: 8,
         spaceMd: 16,
         spaceLg: 24,
-        radiusControl: 10
+        radiusControl: 62
     )
 }

@@ -5,7 +5,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
-import { tokensSchema, type Tokens } from '../app/shared/model.js';
+import { swiftField, tokensSchema, type Tokens } from '../app/shared/model.js';
 
 // Retours haptiques SwiftUI (SensoryFeedback) autorisés dans le fichier d'expérience.
 const haptics = {
@@ -40,13 +40,6 @@ export const experienceSchema = z
   .strict();
 export type Experience = z.infer<typeof experienceSchema>;
 
-// Champ Swift de MainlineTheme : color.brandHover → brandHover, space.md → spaceMd.
-export const swiftField = (key: string) => {
-  const [group, name] = key.split('.');
-  return group === 'color'
-    ? name
-    : group + name[0].toUpperCase() + name.slice(1);
-};
 const swiftString = (s: string) =>
   '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
 const header =

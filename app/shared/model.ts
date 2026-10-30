@@ -132,10 +132,18 @@ export function diff(before: Tokens, after: Tokens): Patch[] {
       after: after[key].$value,
     }));
 }
+// Noms d'un token dans le code : variable CSS du site, propriété de MainlineTheme en Swift.
+export const cssVar = (key: TokenKey) => `--${key.replaceAll('.', '-')}`;
+export const swiftField = (key: string) => {
+  const [group, name] = key.split('.');
+  return group === 'color'
+    ? name
+    : group + name[0].toUpperCase() + name.slice(1);
+};
 export function tokenCss(tokens: Tokens): Record<string, string> {
   return Object.fromEntries(
     tokenKeys.map((key) => [
-      `--${key.replaceAll('.', '-')}`,
+      cssVar(key),
       `${tokens[key].$value}${tokens[key].$type === 'dimension' ? 'px' : ''}`,
     ]),
   );

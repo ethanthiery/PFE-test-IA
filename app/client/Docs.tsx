@@ -6,7 +6,13 @@ import {
   type ReactNode,
 } from 'react';
 import FluidList from './FluidList.js';
-import type { Revision, TokenKey, Tokens } from '../shared/model.js';
+import {
+  cssVar,
+  swiftField,
+  type Revision,
+  type TokenKey,
+  type Tokens,
+} from '../shared/model.js';
 
 export type Page = { href: string; label: string };
 
@@ -238,45 +244,86 @@ export function FoundationPage({
   prev?: Page;
   next?: Page;
 }) {
+  const [lang, setLang] = useState<'swift' | 'css'>('swift');
+  const [copied, setCopied] = useState('');
+  const snippet = (k: TokenKey) =>
+    lang === 'swift' ? `theme.${swiftField(k)}` : `var(${cssVar(k)})`;
+  async function copy(k: TokenKey) {
+    try {
+      await navigator.clipboard.writeText(snippet(k));
+      setCopied(k);
+      setTimeout(() => setCopied((c) => (c === k ? '' : c)), 1500);
+    } catch {
+      setCopied('');
+    }
+  }
   return (
     <article className="doc-page">
       <PageHead title={title} lead={lead} prev={prev} next={next} />
+      <div className="token-toolbar">
+        <span>Copier le code en</span>
+        <FluidList className="doc-tabs" role="tablist" aria-label="Langage">
+          {(['swift', 'css'] as const).map((l) => (
+            <button
+              key={l}
+              role="tab"
+              data-fluid
+              aria-selected={lang === l}
+              onClick={() => setLang(l)}
+            >
+              {l === 'swift' ? 'SwiftUI' : 'CSS'}
+            </button>
+          ))}
+        </FluidList>
+        <span className="sr-only" role="status">
+          {copied && `${snippet(copied as TokenKey)} copié.`}
+        </span>
+      </div>
       <FluidList className="token-table" role="list">
         {keys.map((k) => {
           const t = tokens[k];
           return (
-            <button
-              key={k}
-              role="listitem"
-              data-fluid
-              aria-pressed={selected === k}
-              aria-label={`Sélectionner ${k}`}
-              onClick={() => onSelect(k)}
-            >
-              <span className="token-preview" aria-hidden="true">
-                {t.$type === 'color' ? (
-                  <span style={{ background: String(t.$value) }} />
-                ) : k.startsWith('radius') ? (
-                  <span style={{ borderRadius: Number(t.$value) }} />
-                ) : k.startsWith('space') ? (
-                  <span style={{ width: Number(t.$value) }} />
-                ) : (
-                  <b
-                    style={{
-                      fontFamily: String(tokens['font.family'].$value),
-                      fontSize: t.$type === 'dimension' ? Number(t.$value) : 16,
-                    }}
-                  >
-                    Aa
-                  </b>
-                )}
-              </span>
-              <span className="token-name">{k}</span>
-              <span className="token-value">
-                {String(t.$value)}
-                {t.$type === 'dimension' ? ' px' : ''}
-              </span>
-            </button>
+            <div key={k} role="listitem" className="token-row">
+              <button
+                data-fluid
+                aria-pressed={selected === k}
+                aria-label={`Sélectionner ${k}`}
+                onClick={() => onSelect(k)}
+              >
+                <span className="token-preview" aria-hidden="true">
+                  {t.$type === 'color' ? (
+                    <span style={{ background: String(t.$value) }} />
+                  ) : k.startsWith('radius') ? (
+                    <span style={{ borderRadius: Number(t.$value) }} />
+                  ) : k.startsWith('space') ? (
+                    <span style={{ width: Number(t.$value) }} />
+                  ) : (
+                    <b
+                      style={{
+                        fontFamily: String(tokens['font.family'].$value),
+                        fontSize:
+                          t.$type === 'dimension' ? Number(t.$value) : 16,
+                      }}
+                    >
+                      Aa
+                    </b>
+                  )}
+                </span>
+                <span className="token-name">{k}</span>
+                <span className="token-value">
+                  {String(t.$value)}
+                  {t.$type === 'dimension' ? ' px' : ''}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="token-copy"
+                aria-label={`Copier ${snippet(k)}`}
+                onClick={() => void copy(k)}
+              >
+                {copied === k ? 'Copié' : <code>{snippet(k)}</code>}
+              </button>
+            </div>
           );
         })}
       </FluidList>

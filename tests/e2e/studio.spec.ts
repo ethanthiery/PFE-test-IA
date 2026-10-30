@@ -37,7 +37,7 @@ test('boucle centrale réelle : diff, validation, propagation, recharge, annulat
   await page.goto('/#/fondations/couleurs');
   await page.reload();
   await expect(
-    page.getByRole('listitem', {
+    page.getByRole('button', {
       name: 'Sélectionner color.brand',
       exact: true,
     }),
@@ -332,4 +332,28 @@ test('V2 : clavier, mobile 375 px et absence de stockage navigateur', async ({
   expect(
     await page.locator('body').evaluate((el) => el.scrollWidth <= innerWidth),
   ).toBe(true);
+});
+
+test('fondations : copier le code Swift ou CSS d’un token', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/#/fondations/rayons');
+  await page
+    .getByRole('button', { name: 'Copier theme.radiusControl' })
+    .click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'copié' }),
+  ).toHaveText('theme.radiusControl copié.');
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    'theme.radiusControl',
+  );
+  await page.getByRole('tab', { name: 'CSS' }).click();
+  await page
+    .getByRole('button', { name: 'Copier var(--radius-control)' })
+    .click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    'var(--radius-control)',
+  );
 });

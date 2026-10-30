@@ -1,12 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import {
-  experienceSchema,
-  swiftField,
-  swiftSources,
-} from '../scripts/generate-swift.js';
-import { tokensSchema } from '../app/shared/model.js';
+import { experienceSchema, swiftSources } from '../scripts/generate-swift.js';
+import { swiftField, tokensSchema } from '../app/shared/model.js';
 
 const seed = tokensSchema.parse(
   JSON.parse(await readFile('workspace/design-system.tokens.json', 'utf8')),

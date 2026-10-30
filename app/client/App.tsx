@@ -143,6 +143,11 @@ function announceChange() {
   c.postMessage('updated');
   c.close();
 }
+// Demande prête à l'emploi : l'agent relit les tokens au regard des règles du projet.
+const checkPrompt =
+  'Vérifie le design system : relis chaque token au regard de workspace/DESIGN_RULES.md et du contraste. ' +
+  'Liste les écarts en une phrase chacun, du plus grave au moins grave. ' +
+  'Propose une correction seulement pour l’écart le plus grave.';
 const CloseButton = ({ onClick }: { onClick: () => void }) => (
   <button
     type="button"
@@ -278,10 +283,9 @@ export default function App() {
     });
     setSaving(false);
   }
-  async function sendMessage() {
-    if (!state || !message.trim() || thinking) return;
-    const text = message;
-    setMessage('');
+  async function sendMessage(text = message) {
+    if (!state || !text.trim() || thinking) return;
+    if (text === message) setMessage('');
     setThinking(true);
     clearError();
     const previous = chat.slice(-10);
@@ -638,6 +642,15 @@ export default function App() {
                       privé, DESIGN_RULES.md et 10 messages récents. Aucun outil
                       ni commande ; propositions seulement.
                     </p>
+                    <button
+                      type="button"
+                      className="check-ds"
+                      disabled={thinking || !selectedAgent?.available}
+                      onClick={() => void sendMessage(checkPrompt)}
+                    >
+                      <Icon d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0" />
+                      Vérifier le DS
+                    </button>
                     <div
                       className="chat-log"
                       aria-label="Conversation"
