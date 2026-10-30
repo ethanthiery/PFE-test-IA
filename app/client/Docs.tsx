@@ -284,6 +284,52 @@ export function FoundationPage({
   );
 }
 
+// Expérience : retours haptiques et textes du rituel, lus dans
+// workspace/mainline.experience.json et livrés dans le package Swift.
+export function ExperiencePage({
+  experience,
+  prev,
+  next,
+}: {
+  experience: Record<
+    'haptic' | 'copy',
+    Record<string, { $value: string; $description: string }>
+  >;
+  prev?: Page;
+  next?: Page;
+}) {
+  const groups = [
+    { id: 'haptic', title: 'Retours haptiques', swift: 'MainlineHaptic' },
+    { id: 'copy', title: 'Textes', swift: 'MainlineCopy' },
+  ] as const;
+  return (
+    <article className="doc-page">
+      <PageHead
+        title="Expérience"
+        lead="Les retours haptiques et les textes qui rythment le trajet. Ils se modifient dans workspace/mainline.experience.json, puis npm run swift les livre au package MainlineDS."
+        prev={prev}
+        next={next}
+      />
+      {groups.map((g) => (
+        <section className="doc-section" key={g.id}>
+          <h2>{g.title}</h2>
+          <ul className="experience-list">
+            {Object.entries(experience[g.id]).map(([name, e]) => (
+              <li key={name}>
+                <code>
+                  {g.swift}.{name}
+                </code>
+                <span>{e.$description}</span>
+                <strong>{e.$value}</strong>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </article>
+  );
+}
+
 // Page d'un composant : la structure des pages « docs » de la référence,
 // avec des emplacements vides à remplir quand le composant existera.
 export function ComponentPage({

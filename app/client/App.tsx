@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Scenario } from './DesignSystem.js';
 import {
   ComponentPage,
+  ExperiencePage,
   FoundationPage,
   Icon,
   IntroPage,
@@ -11,6 +12,7 @@ import {
   type Page,
 } from './Docs.js';
 import FluidList from './FluidList.js';
+import experience from '../../workspace/mainline.experience.json';
 import ProjectBrief from './ProjectBrief.js';
 import { useTokenDraft } from './useTokenDraft.js';
 import {
@@ -86,6 +88,7 @@ const pages: Page[] = [
     href: `#/fondations/${f.slug}`,
     label: f.label,
   })),
+  { href: '#/fondations/experience', label: 'Expérience' },
   ...components.map((c) => ({
     href: `#/composants/${c.slug}`,
     label: c.label,
@@ -394,7 +397,7 @@ export default function App() {
               </a>
             </FluidList>
             <div className="sidebar-title">
-              Fondations <span>{foundations.length}</span>
+              Fondations <span>{foundations.length + 1}</span>
             </div>
             <FluidList className="sidebar-group">
               {foundations.map((f) => (
@@ -409,6 +412,15 @@ export default function App() {
                   {f.label}
                 </a>
               ))}
+              <a
+                href="#/fondations/experience"
+                data-fluid
+                aria-current={
+                  route === '#/fondations/experience' ? 'page' : undefined
+                }
+              >
+                Expérience
+              </a>
             </FluidList>
             <div className="sidebar-title">
               Composants <span>{components.length}</span>
@@ -542,6 +554,9 @@ export default function App() {
                   next={next}
                 />
               ),
+          )}
+          {route === '#/fondations/experience' && (
+            <ExperiencePage experience={experience} prev={prev} next={next} />
           )}
           {components.map(
             (c) =>

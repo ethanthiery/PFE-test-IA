@@ -13,6 +13,7 @@
     "start": "tsx app/server/index.ts",
     "launcher": "node scripts/launcher.mjs",
     "test:launcher": "node --test tests/launcher.test.mjs",
+    "swift": "tsx scripts/generate-swift.ts",
     "qualify:desktop": "node scripts/qualify-desktop.mjs",
     "check": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",

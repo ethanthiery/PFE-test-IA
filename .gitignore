@@ -24,3 +24,9 @@ Thumbs.db
 
 # Suivi de reprise local, non destiné à la distribution.
 /PROGRESS.md
+
+# Swift et Xcode
+ios/**/.build/
+ios/**/.swiftpm/
+xcuserdata/
+*.xcworkspace/

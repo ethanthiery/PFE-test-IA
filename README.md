@@ -31,6 +31,21 @@ Puis ouvrir http://127.0.0.1:4310. Le site tourne uniquement sur votre machine.
 Le panneau de droite permet de proposer une nouvelle valeur de token. Rien n’est
 enregistré sans validation dans la fenêtre de comparaison.
 
+## Côté iPhone (SwiftUI)
+
+- **`ios/MainlineDS`** : le package Swift du DS. `MainlineTheme` (couleurs,
+  typographie, espacements, rayons), `MainlineHaptic` (retours haptiques) et
+  `MainlineCopy` (textes clés). Dans Xcode : File → Add Package Dependencies →
+  Add Local…, puis `@Environment(\.mainlineTheme) var theme`.
+- **`npm run swift`** régénère les fichiers `*.generated.swift` à partir des
+  tokens validés et de [workspace/mainline.experience.json](workspace/mainline.experience.json).
+  À relancer après chaque changement, puis à commiter.
+- **`ios/MainlineDemo`** : une app de démonstration. Lancée dans le simulateur
+  pendant que DS-Studio tourne, elle suit les tokens **en direct** : une
+  validation dans le site se voit dans l’iPhone en une seconde. Un vrai iPhone
+  ne joint pas le Mac ; il affiche les valeurs du package. Les retours
+  haptiques ne se ressentent que sur un vrai iPhone.
+
 ## État actuel
 
 - Seuls `color.brand` et `color.brandHover` viennent de Mainline ; les autres

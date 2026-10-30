@@ -1,0 +1,62 @@
+{
+  "haptic": {
+    "choix": {
+      "$value": "selection",
+      "$description": "Choisir une gare, une durée ou une activité."
+    },
+    "compostage": {
+      "$value": "impact.heavy",
+      "$description": "Le billet est composté : la session démarre."
+    },
+    "depart": {
+      "$value": "start",
+      "$description": "Le train quitte la gare."
+    },
+    "pause": {
+      "$value": "impact.soft",
+      "$description": "Arrivée en gare de correspondance."
+    },
+    "reprise": {
+      "$value": "start",
+      "$description": "Le train repart après la pause."
+    },
+    "arret": {
+      "$value": "stop",
+      "$description": "Session arrêtée avant l’arrivée : neutre, jamais une erreur."
+    },
+    "arrivee": {
+      "$value": "success",
+      "$description": "Arrivée à destination."
+    }
+  },
+  "copy": {
+    "composter": {
+      "$value": "Composter mon billet",
+      "$description": "Bouton qui démarre la session."
+    },
+    "depart": {
+      "$value": "Votre train part.",
+      "$description": "Annonce au début de la session."
+    },
+    "pause": {
+      "$value": "Pause en gare. Ce temps ne compte pas comme du travail.",
+      "$description": "Écran de gare de correspondance."
+    },
+    "reprise": {
+      "$value": "On repart",
+      "$description": "Bouton de fin de pause."
+    },
+    "arret": {
+      "$value": "Trajet interrompu. Vous reprendrez la ligne quand vous voudrez.",
+      "$description": "Arrêt avant l’arrivée : jamais culpabilisant."
+    },
+    "arrivee": {
+      "$value": "Vous êtes arrivé à destination.",
+      "$description": "Fin progressive du trajet."
+    },
+    "offreFermer": {
+      "$value": "Plus tard",
+      "$description": "Fermer l’offre payante, toujours visible."
+    }
+  }
+}
